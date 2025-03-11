@@ -1,2 +1,3 @@
-# global-nomad-safety-hub
+# Global Nomad Safety Hub  
+
 Geolocation-based safety insights for digital nomads.
