@@ -1,4 +1,4 @@
-# Global Digital Nomad Safety Hub
+# Global Digital Nomad Safety Hub ⭐🎉⭐🎉
 
 A comprehensive safety platform for digital nomads and global travelers, featuring real-time alerts, safety maps, and travel resources built with Next.js and Supabase.
 
