@@ -138,7 +138,7 @@ export default function SupabaseTest() {
         )}
         
         {hasCorsIssue && (
-          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+          <Alert variant="default" className="bg-amber-50 border-amber-200">
             <AlertTriangle className="h-4 w-4 text-amber-700" />
             <AlertDescription className="text-amber-700">
               Possible CORS issue detected. Your browser may be blocking requests to Supabase.
