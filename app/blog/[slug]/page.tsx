@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Calendar, Clock, UserCircle, Share2, Bookmark } from "lucide-react";
 
+// Updated blog page with fixed slug generation - [20 March 2025]
+
 // Hey! This is where we store our blog articles. Think of it like a filing cabinet!
 const articles = [
   {
@@ -184,9 +186,9 @@ const articles = [
   }
 ];
 
-// This function tells Next.js which blog posts to create pages for
+// This function tells Next.js which blog posts to create pages for - no fancy stuff!
 export async function generateStaticParams() {
-  // This is a simpler approach that just returns the slugs directly
+  // Just a simple list of our blog posts
   return [
     { slug: "solo-female-traveler-safety-tips" },
     { slug: "digital-security-nomads" },
