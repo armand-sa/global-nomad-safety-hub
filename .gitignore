@@ -128,3 +128,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Credentials folder - contains sensitive API keys and passwords
+/credentials/
+/credentials
