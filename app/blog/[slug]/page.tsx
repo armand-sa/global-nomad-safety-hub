@@ -186,19 +186,9 @@ const articles = [
 
 // This function tells Next.js which blog posts to create pages for
 export async function generateStaticParams() {
-  // List of all our blog post URLs
-  const requiredSlugs = [
-    "solo-female-traveler-safety-tips",
-    "digital-security-nomads",
-    "travel-insurance-digital-nomads",
-    "medellin-safety-guide",
-    "apartment-security-abroad",
-    "southeast-asia-safest-destinations"
-  ];
-  
-  // Create the pages for each blog post
-  return requiredSlugs.map(slug => ({
-    slug: slug
+  // Just get the slugs directly from our articles
+  return articles.map(article => ({
+    slug: article.slug
   }));
 }
 
