@@ -132,3 +132,4 @@ dist
 # Credentials folder - contains sensitive API keys and passwords
 /credentials/
 /credentials
+.vercel

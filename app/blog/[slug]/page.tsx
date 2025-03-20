@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, Calendar, Clock, UserCircle, Share2, Bookmark } from "lucide-react";
 
-// This would normally come from a CMS or database
+// Hey! This is where we store our blog articles. Think of it like a filing cabinet!
 const articles = [
   {
     slug: "solo-female-traveler-safety-tips",
@@ -184,10 +184,10 @@ const articles = [
   }
 ];
 
-// Generate static paths for all articles at build time
+// This function tells Next.js which blog posts to create pages for
 export async function generateStaticParams() {
-  // Ensure all required slugs are explicitly included
-  const allRequiredSlugs = [
+  // List of all our blog post URLs
+  const requiredSlugs = [
     "solo-female-traveler-safety-tips",
     "digital-security-nomads",
     "travel-insurance-digital-nomads",
@@ -196,17 +196,13 @@ export async function generateStaticParams() {
     "southeast-asia-safest-destinations"
   ];
   
-  // Get all slugs from articles
-  const articleSlugs = articles.map(article => article.slug);
-  
-  // Combine and deduplicate
-  const allSlugs = [...new Set([...articleSlugs, ...allRequiredSlugs])];
-  
-  // Return in the correct format for Next.js
-  return allSlugs.map(slug => ({ slug }));
+  // Create the pages for each blog post
+  return requiredSlugs.map(slug => ({
+    slug: slug
+  }));
 }
 
-// Dynamic metadata generation
+// This function creates the metadata for each blog post (like title and description)
 export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
   const article = articles.find((article) => article.slug === params.slug);
   
@@ -237,6 +233,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
   };
 }
 
+// This is the main function that creates each blog post page
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
   const article = articles.find((article) => article.slug === params.slug);
   
