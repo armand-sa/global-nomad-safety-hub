@@ -25,6 +25,8 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
   const [networkStatus, setNetworkStatus] = useState<boolean>(true);
+  const [sitePassword, setSitePassword] = useState("");
+  const [sitePasswordError, setSitePasswordError] = useState<string | null>(null);
 
   // Check network status
   useEffect(() => {
@@ -109,6 +111,25 @@ export default function LoginPage() {
     }
   };
 
+  const handleSitePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSitePasswordError(null);
+
+    const formData = new FormData(e.target as HTMLFormElement);
+    const response = await fetch('/api/verify-password', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response.ok) {
+      setSitePasswordError("Invalid site password");
+      return;
+    }
+
+    // Refresh the page to apply the password cookie
+    window.location.reload();
+  };
+
   return (
     <div className="container max-w-screen-xl mx-auto px-4 flex h-screen w-screen flex-col items-center justify-center">
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
@@ -118,6 +139,39 @@ export default function LoginPage() {
             {activeTab === "login" ? "Sign in to access your account" : "Create an account to get started"}
           </p>
         </div>
+
+        <Card className="mb-6">
+          <form onSubmit={handleSitePassword}>
+            <CardHeader>
+              <CardTitle>Site Access Required</CardTitle>
+              <CardDescription>
+                This site is currently in development. Please enter the site password to continue.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="site-password">Site Password</Label>
+                <Input
+                  id="site-password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter site password"
+                  value={sitePassword}
+                  onChange={(e) => setSitePassword(e.target.value)}
+                  required
+                />
+                {sitePasswordError && (
+                  <p className="text-sm text-destructive">{sitePasswordError}</p>
+                )}
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button className="w-full" type="submit">
+                Access Site
+              </Button>
+            </CardFooter>
+          </form>
+        </Card>
 
         {!networkStatus && (
           <Alert variant="destructive">

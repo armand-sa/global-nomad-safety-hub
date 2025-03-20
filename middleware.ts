@@ -6,23 +6,48 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
   
-  // Refresh session if expired - helps with token rotation
+  // 1. SKIP CHECKS FOR PUBLIC RESOURCES
+  // Don't check passwords or auth for static files, images, and API routes
+  if (
+    req.nextUrl.pathname.startsWith('/_next') ||
+    req.nextUrl.pathname.startsWith('/api') ||
+    req.nextUrl.pathname.includes('favicon.ico')
+  ) {
+    return res;
+  }
+
+  // 2. SUPABASE SESSION CHECK
+  // Keep the user's login session active
   const { data: { session } } = await supabase.auth.getSession();
   
-  // Check if requesting an admin route
+  // 3. SITE PASSWORD PROTECTION
+  // Check the site password (except for login page)
+  if (!req.nextUrl.pathname.startsWith('/login')) {
+    const hasPassword = req.cookies.get('site-password');
+    const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
+
+    if (!hasPassword || hasPassword.value !== correctPassword) {
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 4. ADMIN ROUTE PROTECTION
+  // Extra security for admin pages
   if (req.nextUrl.pathname.startsWith('/admin')) {
     if (!session) {
-      // Redirect to login if no session exists
+      // Send to login if not logged in
       const redirectUrl = new URL('/login', req.url);
       redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
       return NextResponse.redirect(redirectUrl);
     }
     
-    // Check for admin role in user metadata
+    // Check if user has admin rights
     const isAdmin = session.user.app_metadata?.role === 'admin';
     
     if (!isAdmin) {
-      // If user is logged in but not an admin, redirect to home page
+      // Send non-admin users to homepage
       return NextResponse.redirect(new URL('/', req.url));
     }
   }
@@ -30,9 +55,9 @@ export async function middleware(req: NextRequest) {
   return res;
 }
 
+// Apply middleware to all routes
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/api/admin/:path*'
+    '/(.*)',  // Match all routes
   ],
 };
