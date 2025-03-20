@@ -230,7 +230,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   const article = articles.find((article) => article.slug === params.slug);
   
   if (!article) {
-    notFound();
+    return notFound();
   }
   
   // Find related articles
