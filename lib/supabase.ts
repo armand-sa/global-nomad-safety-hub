@@ -6,21 +6,8 @@ let supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 // Try to load credentials from file in development
 if (process.env.NODE_ENV !== 'production') {
-  try {
-    // Using dynamic import for the credentials
-    import('../credentials/supabase-keys')
-      .then(module => {
-        // Update credentials from the imported file
-        supabaseUrl = module.SUPABASE_URL;
-        supabaseAnonKey = module.SUPABASE_ANON_KEY;
-        console.log('Credentials loaded from local file.');
-      })
-      .catch(error => {
-        console.warn('Could not load credentials from file, using environment variables instead.', error);
-      });
-  } catch (error) {
-    console.warn('Error attempting to import credentials:', error);
-  }
+  // Skip trying to load from local files in deployment
+  console.log('Using environment variables for Supabase credentials');
 }
 
 // Function to create the Supabase client with the current credentials
