@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
-import { Loader2, AlertCircle, Wifi, WifiOff, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertCircle, Wifi, WifiOff, CheckCircle2, Lock } from "lucide-react";
 
 // Main login page component
 export default function LoginPage() {
@@ -23,7 +23,7 @@ export default function LoginPage() {
   const tabParam = searchParams.get("tab");
   const redirectTo = searchParams.get("redirectTo") || "/";
   
-  // NEW: Add state for site password verification
+  // State for site password verification
   const [isVerified, setIsVerified] = useState(false);
   const [isCheckingVerification, setIsCheckingVerification] = useState(true);
   
@@ -45,10 +45,21 @@ export default function LoginPage() {
         setIsCheckingVerification(true);
         console.log("Checking if site password is verified...");
         
+        // Make a fetch call to verify password
         const response = await fetch('/api/verify-password', {
           method: 'GET',
-          cache: 'no-store' // Prevent caching
+          cache: 'no-store', // Prevent caching
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
         });
+        
+        if (!response.ok) {
+          console.log("API response not ok:", response.status);
+          setIsVerified(false);
+          return;
+        }
         
         const data = await response.json();
         console.log("Verification check response:", {
@@ -56,7 +67,7 @@ export default function LoginPage() {
           verified: data.verified
         });
         
-        if (response.ok && data.verified === true) {
+        if (data.verified === true) {
           console.log("Site password is verified");
           setIsVerified(true);
         } else {
@@ -165,7 +176,7 @@ export default function LoginPage() {
     }
   };
 
-  // NEW: Updated site password handler
+  // Site password handler
   const handleSitePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmittingPassword(true);
@@ -233,7 +244,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Welcome to Global Nomad Safety</h1>
           <p className="text-sm text-muted-foreground">
             {!isVerified 
-              ? "Please enter site password to continue" 
+              ? "This site is password protected during development" 
               : activeTab === "login" 
                 ? "Sign in to access your account" 
                 : "Create an account to get started"
@@ -242,15 +253,15 @@ export default function LoginPage() {
         </div>
 
         {!isVerified ? (
-          <Card className="mb-6 border-2 border-primary-foreground">
+          <Card className="mb-6 border-2 border-primary border-opacity-50 shadow-lg">
             <form onSubmit={handleSitePassword}>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <CheckCircle2 className="mr-2 h-5 w-5 text-primary" />
-                  Site Access Required
+                  <Lock className="mr-2 h-5 w-5 text-primary" />
+                  Development Site Access
                 </CardTitle>
                 <CardDescription>
-                  This site is currently in development. Enter the site password to continue.
+                  This site is currently in development and requires a password to access. Please enter the password provided to you.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

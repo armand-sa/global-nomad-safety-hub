@@ -9,16 +9,19 @@ export async function GET() {
     const passwordCookie = cookies().get('site-password');
     const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
     
-    // For testing - print debug info to server logs
+    // Log detailed info for debugging
     console.log('GET /api/verify-password - Checking cookie:', {
       hasCookie: !!passwordCookie,
       hasPassword: !!correctPassword,
-      cookieValue: passwordCookie?.value?.substring(0, 3) + '***', // Only log first 3 chars for safety
+      cookieValue: passwordCookie?.value ? passwordCookie.value.substring(0, 3) + '***' : null, // Only log first 3 chars for safety
     });
     
-    if (passwordCookie && passwordCookie.value === correctPassword) {
+    // Verify the cookie is valid
+    if (passwordCookie && correctPassword && passwordCookie.value === correctPassword) {
+      console.log('Password cookie verified');
       return NextResponse.json({ verified: true }, { status: 200 });
     } else {
+      console.log('Password cookie not valid');
       return NextResponse.json({ verified: false }, { status: 401 });
     }
   } catch (error) {
@@ -33,28 +36,35 @@ export async function POST(request: Request) {
     const data = await request.formData();
     const password = data.get('password');
     
-    // For testing - print debug info to server logs (but not the actual password!)
+    // Log what we received (but not the actual password)
     console.log('POST /api/verify-password - Password submitted:', { 
       hasPassword: !!password,
       passwordLength: password ? String(password).length : 0,
       hasEnvPassword: !!process.env.NEXT_PUBLIC_SITE_PASSWORD,
+      envPasswordLength: process.env.NEXT_PUBLIC_SITE_PASSWORD ? process.env.NEXT_PUBLIC_SITE_PASSWORD.length : 0,
     });
     
     // Check if password matches
-    if (!password || password !== process.env.NEXT_PUBLIC_SITE_PASSWORD) {
+    if (!password || !process.env.NEXT_PUBLIC_SITE_PASSWORD) {
+      console.log('Password verification failed - missing password or env var');
+      return NextResponse.json({ error: 'Missing password', success: false }, { status: 401 });
+    }
+    
+    if (String(password) !== process.env.NEXT_PUBLIC_SITE_PASSWORD) {
       console.log('Password verification failed - wrong password');
-      return NextResponse.json({ error: 'Wrong password' }, { status: 401 });
+      return NextResponse.json({ error: 'Wrong password', success: false }, { status: 401 });
     }
 
-    console.log('Password verified successfully, setting cookie');
+    console.log('Password verified successfully');
     
-    // Create a basic response
+    // Create a success response
     const response = NextResponse.json({ 
       success: true, 
       message: 'Password accepted' 
     });
     
-    // Set password in cookie directly on the response (more reliable)
+    // Set the password cookie
+    console.log('Setting password cookie');
     response.cookies.set('site-password', String(process.env.NEXT_PUBLIC_SITE_PASSWORD), {
       httpOnly: true,               // Can't be accessed by JavaScript
       secure: true,                 // HTTPS only 
@@ -63,10 +73,10 @@ export async function POST(request: Request) {
       path: '/',                    // Available on all pages
     });
 
-    console.log('Cookie set directly on response');
+    console.log('Cookie set, returning success response');
     return response;
   } catch (error) {
     console.error('Password verification error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Server error', success: false }, { status: 500 });
   }
 }

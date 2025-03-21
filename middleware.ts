@@ -18,6 +18,7 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith('/_next') ||
     req.nextUrl.pathname.startsWith('/api') ||
     req.nextUrl.pathname === '/login' || 
+    req.nextUrl.pathname === '/login/' ||
     req.nextUrl.pathname === '/favicon.ico' ||
     req.nextUrl.pathname.includes('.svg') ||
     req.nextUrl.pathname.includes('.png') ||
@@ -25,6 +26,12 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.includes('.jpeg') ||
     req.nextUrl.pathname.includes('.ico')
   ) {
+    // For login paths with trailing slash, redirect to non-trailing version
+    if (req.nextUrl.pathname === '/login/') {
+      const url = new URL('/login', req.url);
+      return NextResponse.redirect(url);
+    }
+    
     console.log('Skipping password check for:', req.nextUrl.pathname);
     return res;
   }
@@ -45,7 +52,7 @@ export async function middleware(req: NextRequest) {
   if (!sitePasswordCookie || sitePasswordCookie.value !== correctPassword) {
     console.log('No valid password cookie, redirecting to login');
     
-    // Create redirect URL to login page
+    // Create redirect URL to login page (without trailing slash)
     const url = new URL('/login', req.url);
     
     // Remember where user was trying to go
