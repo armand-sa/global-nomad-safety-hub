@@ -1,3 +1,5 @@
+"use client";
+
 // Helper functions for working with geolocation
 
 // Type for location data
@@ -5,6 +7,7 @@ export type LocationData = {
   latitude: number;
   longitude: number;
   suburb: string;
+  city: string;
   state: string;
   country: string;
   countryCode: string;
@@ -90,15 +93,17 @@ export const reverseGeocodeOSM = async (
     // Extract relevant address components
     const suburb = data.address.suburb || 
                   data.address.neighbourhood || 
-                  data.address.town ||
-                  data.address.village || 
-                  data.address.city_district || 
-                  data.address.district || 
                   data.address.quarter || 
                   data.address.hamlet ||
-                  data.address.city ||
                   "Unknown";
                   
+    const city = data.address.city || 
+                data.address.town ||
+                data.address.village || 
+                data.address.city_district || 
+                data.address.district ||
+                "Unknown";
+                
     const state = data.address.state || 
                  data.address.province || 
                  data.address.region || 
@@ -114,6 +119,7 @@ export const reverseGeocodeOSM = async (
 
     return {
       suburb,
+      city,
       state,
       country,
       countryCode,
@@ -144,7 +150,8 @@ export const reverseGeocodeBDC = async (
     const data = await response.json();
     
     return {
-      suburb: data.locality || data.city || "Unknown",
+      suburb: data.locality || "Unknown",
+      city: data.city || "Unknown",
       state: data.principalSubdivision || data.adminArea || "Unknown",
       country: data.countryName || "Unknown",
       countryCode: data.countryCode || "Unknown",
@@ -172,8 +179,11 @@ export const reverseGeocode = async (
     
     // Combine results, preferring OSM but filling gaps with BDC
     return {
-      // For city/suburb, prefer BigDataCloud as it's often more accurate for city names
-      suburb: (bdcData?.suburb !== "Unknown" ? bdcData?.suburb : osmData?.suburb) || "Unknown",
+      // For suburbs, OSM is often more accurate
+      suburb: (osmData?.suburb !== "Unknown" ? osmData?.suburb : bdcData?.suburb) || "Unknown",
+      
+      // For city, BigDataCloud is typically more accurate
+      city: (bdcData?.city !== "Unknown" ? bdcData?.city : osmData?.city) || "Unknown",
       
       // For state/province, OSM is typically more accurate
       state: (osmData?.state !== "Unknown" ? osmData?.state : bdcData?.state) || "Unknown",
@@ -186,6 +196,7 @@ export const reverseGeocode = async (
     console.error("Error in combined reverse geocoding:", error);
     return {
       suburb: "Unknown",
+      city: "Unknown",
       state: "Unknown",
       country: "Unknown",
       countryCode: "Unknown",
@@ -252,6 +263,7 @@ export const getFullLocationData = async (): Promise<LocationData> => {
       longitude,
       accuracy,
       suburb: addressData.suburb || "Unknown",
+      city: addressData.city || "Unknown",
       state: addressData.state || "Unknown",
       country: addressData.country || "Unknown",
       countryCode: addressData.countryCode || "Unknown",
