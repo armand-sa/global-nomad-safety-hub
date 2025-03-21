@@ -12,23 +12,59 @@ export type LocationData = {
   country: string;
   countryCode: string;
   accuracy: number; // in meters
+  accuracyString?: string;
+};
+
+export type GeolocationResult = {
+  coords: {
+    latitude: number;
+    longitude: number;
+    accuracy: number;
+    heading: number | null;
+    speed: number | null;
+    altitude: number | null;
+    altitudeAccuracy: number | null;
+  };
+  timestamp: number;
+};
+
+export type GeoError = {
+  code: number;
+  message: string;
+  PERMISSION_DENIED?: number;
+  POSITION_UNAVAILABLE?: number;
+  TIMEOUT?: number;
+};
+
+export type ReverseGeocodingResult = {
+  country: string;
+  countryCode: string;
+  state: string;
+  city: string;
+  suburb: string;
+  street: string | null;
+  postalCode: string | null;
+};
+
+// Type for location search results
+export type LocationSearchResult = {
+  city: string;
+  state: string;
+  country: string;
+  countryCode: string;
+  latitude: number;
+  longitude: number;
 };
 
 /**
- * Gets the user's current position using the browser's Geolocation API
- * Enhanced for better accuracy
+ * Gets the user's current position using the Geolocation API
  */
-export const getCurrentPosition = (): Promise<{
-  coords: { latitude: number; longitude: number; accuracy: number };
-}> => {
-  return new Promise((resolve, reject) => {
-    // Check if geolocation is supported
-    if (!navigator.geolocation) {
-      reject(new Error("Geolocation is not supported by your browser"));
-      return;
-    }
+export const getCurrentPosition = async (): Promise<GeolocationResult> => {
+  if (!navigator.geolocation) {
+    throw new Error("Geolocation is not supported by this browser");
+  }
 
-    // Get current position with highest possible accuracy
+  return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
@@ -36,30 +72,41 @@ export const getCurrentPosition = (): Promise<{
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
             accuracy: position.coords.accuracy,
+            heading: position.coords.heading,
+            speed: position.coords.speed,
+            altitude: position.coords.altitude,
+            altitudeAccuracy: position.coords.altitudeAccuracy,
           },
+          timestamp: position.timestamp,
         });
       },
       (error) => {
         let errorMessage = "Unknown error occurred";
         
         switch (error.code) {
-          case error.PERMISSION_DENIED:
-            errorMessage = "User denied the request for geolocation";
+          case 1: // PERMISSION_DENIED
+            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
             break;
-          case error.POSITION_UNAVAILABLE:
-            errorMessage = "Location information is unavailable";
+          case 2: // POSITION_UNAVAILABLE
+            errorMessage = "Unable to determine your current location. Please try again later.";
             break;
-          case error.TIMEOUT:
-            errorMessage = "The request to get user location timed out";
+          case 3: // TIMEOUT
+            errorMessage = "Location request timed out. Please try again.";
             break;
         }
         
-        reject(new Error(errorMessage));
+        reject({
+          code: error.code,
+          message: errorMessage,
+          PERMISSION_DENIED: 1,
+          POSITION_UNAVAILABLE: 2,
+          TIMEOUT: 3,
+        });
       },
-      {
-        enableHighAccuracy: true, // Get the most accurate result possible
-        timeout: 15000, // Wait up to 15 seconds
-        maximumAge: 0, // Don't use cached position
+      { 
+        enableHighAccuracy: true, 
+        timeout: 10000, 
+        maximumAge: 0 
       }
     );
   });
@@ -169,107 +216,188 @@ export const reverseGeocodeBDC = async (
 export const reverseGeocode = async (
   latitude: number,
   longitude: number
-): Promise<Partial<LocationData>> => {
+): Promise<ReverseGeocodingResult> => {
   try {
-    // Try OpenStreetMap first (most detailed for many regions)
-    const osmData = await reverseGeocodeOSM(latitude, longitude).catch(() => null);
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`,
+      {
+        headers: {
+          "User-Agent": "GlobalNomadSafetyHub/1.0",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to reverse geocode: ${response.statusText}`);
+    }
+
+    const data = await response.json();
     
-    // Also try BigDataCloud (often better for cities/suburbs)
-    const bdcData = await reverseGeocodeBDC(latitude, longitude).catch(() => null);
-    
-    // Combine results, preferring OSM but filling gaps with BDC
-    return {
-      // For suburbs, OSM is often more accurate
-      suburb: (osmData?.suburb !== "Unknown" ? osmData?.suburb : bdcData?.suburb) || "Unknown",
-      
-      // For city, BigDataCloud is typically more accurate
-      city: (bdcData?.city !== "Unknown" ? bdcData?.city : osmData?.city) || "Unknown",
-      
-      // For state/province, OSM is typically more accurate
-      state: (osmData?.state !== "Unknown" ? osmData?.state : bdcData?.state) || "Unknown",
-      
-      // For country info, both are reliable but OSM has better coverage
-      country: osmData?.country || bdcData?.country || "Unknown",
-      countryCode: osmData?.countryCode || bdcData?.countryCode || "Unknown",
+    const result: ReverseGeocodingResult = {
+      country: data.address.country || "Unknown",
+      countryCode: data.address.country_code ? data.address.country_code.toUpperCase() : "Unknown",
+      state: data.address.state || data.address.county || data.address.region || "Unknown",
+      city: data.address.city || data.address.town || data.address.village || data.address.municipality || "Unknown",
+      suburb: data.address.suburb || data.address.neighbourhood || data.address.district || "Unknown",
+      street: data.address.road || null,
+      postalCode: data.address.postcode || null,
     };
+
+    return result;
   } catch (error) {
-    console.error("Error in combined reverse geocoding:", error);
-    return {
-      suburb: "Unknown",
-      city: "Unknown",
-      state: "Unknown",
-      country: "Unknown",
-      countryCode: "Unknown",
-    };
+    console.error("Error in reverse geocoding:", error);
+    throw new Error("Failed to get location details. Please try again later.");
   }
 };
 
 /**
- * Get a user-friendly string for location accuracy with human-readable values
+ * Search for locations by name
  */
-export const getAccuracyString = (accuracyInMeters: number): string => {
-  // Get user's locale for number formatting
-  const userLocale = navigator.language || "en-US";
-  
-  // Format number based on magnitude
-  const formatWithUnit = (value: number, unit: string) => {
-    // Round to nearest whole number for cleaner display
-    const rounded = Math.round(value);
-    return `Accurate within ${rounded.toLocaleString(userLocale)} ${unit}`;
-  };
-  
-  // Determine if we should use imperial (feet) or metric (meters)
-  const useImperial = ["US", "GB", "LR", "MM"].includes(
-    Intl.NumberFormat(userLocale).resolvedOptions().locale.split("-")[1] || ""
-  );
-  
-  if (useImperial) {
-    // Convert meters to feet (1m ≈ 3.28084ft)
-    const accuracyInFeet = accuracyInMeters * 3.28084;
-    
-    // Use yards for medium distances (3ft = 1yd)
-    if (accuracyInFeet > 30) {
-      return formatWithUnit(accuracyInFeet / 3, "yards");
+export const searchLocationByName = async (query: string): Promise<LocationSearchResult[]> => {
+  if (!query || query.length < 2) {
+    return [];
+  }
+
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=7&accept-language=en`,
+      {
+        headers: {
+          "User-Agent": "GlobalNomadSafetyHub/1.0",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Failed to search location: ${response.statusText}`);
     }
+
+    const data = await response.json();
     
-    return formatWithUnit(accuracyInFeet, "feet");
-  } else {
-    // For metric, use km for large distances
-    if (accuracyInMeters >= 1000) {
-      return formatWithUnit(accuracyInMeters / 1000, "kilometers");
-    }
+    // Filter to only include places, not streets or buildings
+    const relevantResults = data.filter((item: any) => {
+      // Check if it's a place worth displaying
+      return (
+        (item.type === 'city' || 
+        item.type === 'administrative' || 
+        item.type === 'town' || 
+        item.type === 'village' || 
+        item.type === 'county' || 
+        item.type === 'state' || 
+        item.type === 'country') &&
+        // Make sure there's a country code
+        item.address && item.address.country_code
+      );
+    });
     
-    return formatWithUnit(accuracyInMeters, "meters");
+    const results: LocationSearchResult[] = relevantResults.map((item: any) => ({
+      city: item.address.city || item.address.town || item.address.village || item.address.municipality || "Unknown",
+      state: item.address.state || item.address.county || item.address.region || "Unknown",
+      country: item.address.country || "Unknown",
+      countryCode: item.address.country_code ? item.address.country_code.toUpperCase() : "Unknown",
+      latitude: parseFloat(item.lat),
+      longitude: parseFloat(item.lon),
+    }));
+
+    // Remove duplicates based on display name
+    const uniqueResults = results.filter((result, index, self) => 
+      index === self.findIndex((r) => 
+        r.city === result.city && 
+        r.state === result.state && 
+        r.country === result.country
+      )
+    );
+
+    return uniqueResults;
+  } catch (error) {
+    console.error("Error searching for location:", error);
+    throw new Error("Failed to search for locations. Please try again later.");
   }
 };
 
 /**
- * Complete function to get location data including coordinates and address details
- * Uses multiple sources to maximize accuracy
+ * Gets complete location data including reverse geocoding
  */
 export const getFullLocationData = async (): Promise<LocationData> => {
   try {
-    // Step 1: Get coordinates from device
+    // Get user's coordinates
     const position = await getCurrentPosition();
-    
     const { latitude, longitude, accuracy } = position.coords;
     
-    // Step 2: Convert coordinates to address details using multiple services
-    const addressData = await reverseGeocode(latitude, longitude);
+    // Get location details through reverse geocoding
+    const locationDetails = await reverseGeocode(latitude, longitude);
     
-    // Step 3: Combine the data
     return {
+      suburb: locationDetails.suburb,
+      city: locationDetails.city,
+      state: locationDetails.state,
+      country: locationDetails.country,
+      countryCode: locationDetails.countryCode,
       latitude,
       longitude,
       accuracy,
-      suburb: addressData.suburb || "Unknown",
-      city: addressData.city || "Unknown",
-      state: addressData.state || "Unknown",
-      country: addressData.country || "Unknown",
-      countryCode: addressData.countryCode || "Unknown",
+      accuracyString: formatAccuracy(accuracy)
     };
   } catch (error) {
-    console.error("Error getting location data:", error);
+    console.error("Error getting full location data:", error);
     throw error;
+  }
+};
+
+/**
+ * Creates location data from a manual search result
+ */
+export const getLocationDataFromSearch = async (
+  searchResult: LocationSearchResult
+): Promise<LocationData> => {
+  try {
+    // For manually selected locations, we set a default accuracy
+    // Since the user selected this location, we don't need precise accuracy
+    const defaultAccuracy = 1000; // 1km accuracy for manual selections
+    
+    return {
+      suburb: "Selected Location", // Generic for manual selections
+      city: searchResult.city,
+      state: searchResult.state,
+      country: searchResult.country,
+      countryCode: searchResult.countryCode,
+      latitude: searchResult.latitude,
+      longitude: searchResult.longitude,
+      accuracy: defaultAccuracy,
+      accuracyString: formatAccuracy(defaultAccuracy)
+    };
+  } catch (error) {
+    console.error("Error processing manual location:", error);
+    throw new Error("Failed to process location data");
+  }
+};
+
+/**
+ * Formats accuracy distance to be human-readable
+ * Converts meters to feet for US users
+ */
+export const formatAccuracy = (accuracyInMeters: number): string => {
+  // Detect if user is likely from the US based on language and region
+  const isUS = navigator.language.includes("en-US") || 
+               Intl.DateTimeFormat().resolvedOptions().timeZone.includes("America");
+  
+  if (isUS) {
+    // Convert meters to feet (1 meter ≈ 3.28084 feet)
+    const feet = Math.round(accuracyInMeters * 3.28084);
+    
+    if (feet >= 5280) {
+      const miles = (feet / 5280).toFixed(1);
+      return `±${miles} ${parseFloat(miles) === 1 ? 'mile' : 'miles'}`;
+    }
+    
+    return `±${feet} ft`;
+  } else {
+    // Use meters for non-US users
+    if (accuracyInMeters >= 1000) {
+      const km = (accuracyInMeters / 1000).toFixed(1);
+      return `±${km} km`;
+    }
+    
+    return `±${Math.round(accuracyInMeters)} m`;
   }
 }; 

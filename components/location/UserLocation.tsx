@@ -1,9 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Loader2, RefreshCw, Globe } from "lucide-react";
-import { getFullLocationData, getAccuracyString, type LocationData } from "@/lib/geolocation";
+import { MapPin, Loader2, RefreshCw, Globe, Search } from "lucide-react";
+import { 
+  getFullLocationData, 
+  formatAccuracy, 
+  getLocationDataFromSearch,
+  type LocationData, 
+  type LocationSearchResult 
+} from "@/lib/geolocation";
 import CountryFlag from "./CountryFlag";
+import LocationSearch from "./LocationSearch";
 
 // CSS Animation keyframes for the animations
 const animationKeyframes = `
@@ -41,6 +48,15 @@ const animationKeyframes = `
     transform: translateY(0);
   }
 }
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
 `;
 
 export default function UserLocation() {
@@ -50,6 +66,8 @@ export default function UserLocation() {
   const [showLocation, setShowLocation] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [isManualLocation, setIsManualLocation] = useState(false);
 
   // Add the CSS animation to the document head
   useEffect(() => {
@@ -84,6 +102,7 @@ export default function UserLocation() {
           setLocationData(data);
           setIsLoading(false);
           setIsRefreshing(false);
+          setIsManualLocation(false);
           
           // Add animation delay
           setTimeout(() => {
@@ -119,6 +138,47 @@ export default function UserLocation() {
     setRetryCount(prev => prev + 1);
   };
 
+  const handleEnterManually = () => {
+    setShowSearch(true);
+  };
+
+  const handleSearchCancel = () => {
+    setShowSearch(false);
+  };
+
+  const handleLocationSelect = async (location: LocationSearchResult) => {
+    setIsLoading(true);
+    setShowSearch(false);
+    setShowLocation(false);
+    
+    try {
+      const data = await getLocationDataFromSearch(location);
+      setLocationData(data);
+      setIsManualLocation(true);
+      setError(null);
+      setIsLoading(false);
+      
+      // Add animation delay
+      setTimeout(() => {
+        setShowLocation(true);
+      }, 300);
+    } catch (err) {
+      console.error("Error processing manual location:", err);
+      setError("Failed to process location data");
+      setIsLoading(false);
+    }
+  };
+
+  // Show location search modal when requested
+  if (showSearch) {
+    return (
+      <LocationSearch 
+        onLocationSelect={handleLocationSelect}
+        onCancel={handleSearchCancel}
+      />
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center w-full bg-black/5 dark:bg-white/5 backdrop-blur-sm rounded-md py-6 px-6 mt-4 mb-2 animate-pulse">
@@ -141,12 +201,20 @@ export default function UserLocation() {
         <p className="text-xs text-center text-gray-500 dark:text-gray-400 mb-2 max-w-[240px]">
           Please allow location access to see safety data for your area
         </p>
-        <button 
-          onClick={handleRetry}
-          className="text-xs font-medium bg-primary/20 hover:bg-primary/30 text-primary px-4 py-2 rounded-sm transition-colors mt-1"
-        >
-          Enable Location
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full mt-1 max-w-[250px]">
+          <button 
+            onClick={handleRetry}
+            className="text-xs font-medium bg-primary/20 hover:bg-primary/30 text-primary px-3 py-2 rounded-sm transition-colors"
+          >
+            Enable Location
+          </button>
+          <button 
+            onClick={handleEnterManually}
+            className="text-xs font-medium bg-transparent hover:bg-black/5 dark:hover:bg-white/5 px-3 py-2 rounded-sm transition-colors border border-gray-300 dark:border-gray-600"
+          >
+            Enter Location Manually
+          </button>
+        </div>
       </div>
     );
   }
@@ -156,7 +224,7 @@ export default function UserLocation() {
   }
 
   const { suburb, city, state, countryCode, country, accuracy } = locationData;
-  const accuracyString = getAccuracyString(accuracy);
+  const accuracyString = formatAccuracy(accuracy);
   
   // Determine best location name to display:
   // 1. Suburb if available (most precise)
@@ -168,7 +236,7 @@ export default function UserLocation() {
     <div 
       className={`
         relative w-full bg-white/15 dark:bg-black/30 backdrop-blur-md 
-        rounded-md py-6 px-6 mt-4 mb-2 overflow-hidden transition-all duration-500 ease-in-out
+        rounded-md py-5 px-4 sm:px-6 mt-4 mb-2 overflow-hidden transition-all duration-500 ease-in-out
         ${showLocation ? 'opacity-100 transform-none' : 'opacity-0 translate-y-2'}
         hover:bg-white/20 dark:hover:bg-black/40 transition-colors
         border-t border-white/20 dark:border-white/5
@@ -185,7 +253,7 @@ export default function UserLocation() {
       <div className="relative flex flex-col items-center">
         {/* Flag centered at the top with subtle bounce animation */}
         <div 
-          className="mb-4 transform transition-transform hover:scale-105 duration-300"
+          className="mb-3 transform transition-transform hover:scale-105 duration-300"
           style={{
             animation: showLocation ? 'bounce 1s ease-in-out' : 'none',
             animationDelay: '0.2s',
@@ -215,22 +283,38 @@ export default function UserLocation() {
             )}
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {accuracyString}
+            {isManualLocation ? "Manually selected location" : accuracyString}
           </p>
           
-          {/* Refresh button */}
-          <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="mt-3 text-xs flex items-center justify-center gap-1 text-primary hover:text-primary/80 transition-colors group
-                      bg-primary/10 hover:bg-primary/15 px-3 py-1.5 rounded-sm"
-            aria-label="Refresh location"
-          >
-            <RefreshCw 
-              className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : 'group-hover:animate-spin'}`} 
-            />
-            <span className="ml-1">Refresh</span>
-          </button>
+          {/* Action buttons */}
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            {/* Refresh button (only show if using GPS location) */}
+            {!isManualLocation && (
+              <button 
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className="text-xs flex items-center justify-center gap-1 text-primary hover:text-primary/80 transition-colors group
+                          bg-primary/10 hover:bg-primary/15 px-3 py-1.5 rounded-sm"
+                aria-label="Refresh location"
+              >
+                <RefreshCw 
+                  className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : 'group-hover:animate-spin'}`} 
+                />
+                <span className="ml-1">Refresh</span>
+              </button>
+            )}
+            
+            {/* Manual search button */}
+            <button 
+              onClick={handleEnterManually}
+              className="text-xs flex items-center justify-center gap-1 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 transition-colors
+                        bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 px-3 py-1.5 rounded-sm"
+              aria-label="Enter location manually"
+            >
+              <Search className="h-3.5 w-3.5" /> 
+              <span className="ml-1">Change Location</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

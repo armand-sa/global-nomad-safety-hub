@@ -1,36 +1,37 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Globe, Shield, MapPin, Bell, PenTool } from "lucide-react";
+import { Globe, Shield, MapPin, Bell, PenTool, CreditCard } from "lucide-react";
 import UserLocation from "@/components/location/UserLocation";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
-        <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                Stay Safe Anywhere in the World
-              </h1>
-              <UserLocation />
-              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                Real-time safety insights, alerts, and recommendations for digital nomads and global travelers.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 min-[400px]:flex-row">
-              <Link href="/map">
-                <Button size="lg">
+      <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-transparent px-4">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+              Stay Safe Anywhere in the World
+            </h1>
+            <UserLocation />
+            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+              Get real-time safety insights for travelers and digital nomads. Explore safety scores, local tips, and 
+              emergency information for 200+ countries and cities.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild size="lg" className="gap-2">
+                <Link href="/map">
+                  <MapPin size={18} />
                   Explore Safety Map
-                </Button>
-              </Link>
-              <Link href="/pricing">
-                <Button size="lg" variant="outline">
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="gap-2">
+                <Link href="/pricing">
+                  <CreditCard size={18} />
                   View Pricing
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </div>
         </div>
