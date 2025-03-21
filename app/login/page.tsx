@@ -29,9 +29,10 @@ export default function LoginPage() {
   // Check if the redirect is to admin page
   const isAdminRedirect = redirectTo.includes("/admin");
   
-  // State for site password verification
-  const [isVerified, setIsVerified] = useState(isAuthFlow); // Skip password check if auth=true
-  const [isCheckingVerification, setIsCheckingVerification] = useState(!isAuthFlow);
+  // State for site password verification - immediately consider verified on logout flow
+  const showPasswordForm = !isAuthFlow && !logoutMessage;
+  const [isVerified, setIsVerified] = useState(isAuthFlow || !!logoutMessage); // Skip password check if auth=true or coming from logout
+  const [isCheckingVerification, setIsCheckingVerification] = useState(!isAuthFlow && !logoutMessage);
   
   // States for the login/register forms
   const [activeTab, setActiveTab] = useState<string>(tabParam === "register" ? "register" : "login");
@@ -51,8 +52,8 @@ export default function LoginPage() {
 
   // Check if site password is already verified when page loads - only if not direct auth flow
   useEffect(() => {
-    // Skip verification check if auth=true
-    if (isAuthFlow) {
+    // Skip verification check if auth=true or coming from logout
+    if (isAuthFlow || logoutMessage) {
       setIsVerified(true);
       setIsCheckingVerification(false);
       return;
@@ -101,7 +102,7 @@ export default function LoginPage() {
     };
 
     checkVerification();
-  }, [isAuthFlow]);
+  }, [isAuthFlow, logoutMessage]);
 
   // Check if internet is working
   useEffect(() => {
@@ -298,7 +299,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {!isVerified ? (
+        {!isVerified && showPasswordForm ? (
           <Card className="mb-6 border-2 border-primary border-opacity-50 shadow-lg">
             <form onSubmit={handleSitePassword}>
               <CardHeader>
@@ -481,7 +482,7 @@ export default function LoginPage() {
                           className="flex items-center justify-center gap-2 border-2 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors px-0 h-10"
                         >
                           <div className="flex items-center justify-center w-full space-x-2">
-                            <svg viewBox="0 0 24 24" width="18" height="18" className="text-slate-900 dark:text-white">
+                            <svg viewBox="0 0 24 24" width="20" height="20" className="text-slate-900 dark:text-white">
                               <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.94-3.08.5-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.47C2.72 15.19 3.68 7.04 9.04 6.61c1.36.06 2.47.98 3.3 1 1.26-.12 2.3-.97 3.49-.83 1.48.17 2.6.88 3.27 2.17-3.13 1.92-2.52 6.75.55 8.02-.61 1.25-1.39 2.49-2.6 3.31z"/>
                               <path fill="currentColor" d="M12.03 6.3C11.64 4.3 12.89 2.65 14.56 2c.4 2.98-2.67 4.92-2.53 4.3z"/>
                             </svg>
@@ -593,7 +594,7 @@ export default function LoginPage() {
                           className="flex items-center justify-center gap-2 border-2 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors px-0 h-10"
                         >
                           <div className="flex items-center justify-center w-full space-x-2">
-                            <svg viewBox="0 0 24 24" width="18" height="18" className="text-slate-900 dark:text-white">
+                            <svg viewBox="0 0 24 24" width="20" height="20" className="text-slate-900 dark:text-white">
                               <path fill="currentColor" d="M17.05 20.28c-.98.95-2.05.94-3.08.5-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.47C2.72 15.19 3.68 7.04 9.04 6.61c1.36.06 2.47.98 3.3 1 1.26-.12 2.3-.97 3.49-.83 1.48.17 2.6.88 3.27 2.17-3.13 1.92-2.52 6.75.55 8.02-.61 1.25-1.39 2.49-2.6 3.31z"/>
                               <path fill="currentColor" d="M12.03 6.3C11.64 4.3 12.89 2.65 14.56 2c.4 2.98-2.67 4.92-2.53 4.3z"/>
                             </svg>
