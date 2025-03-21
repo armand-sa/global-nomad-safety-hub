@@ -293,15 +293,24 @@ export default function LoginPage() {
       setActiveTab("login");
       
       // Clear any site password cookie to prevent flashing
+      document.cookie = "site-password=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       document.cookie = "site_verified=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       
-      // Set isAdminRedirect on logout if the redirectTo parameter indicates admin
-      if (redirectTo && redirectTo.includes("/admin")) {
-        // This ensures admin UI elements show properly after logout
-        console.log("Admin redirect detected after logout");
-      }
+      // Force verified state to true to avoid password form
+      setIsVerified(true);
+      setIsCheckingVerification(false);
     }
-  }, [logoutMessage, redirectTo]);
+  }, [logoutMessage]);
+
+  // Add an additional effect to ensure admin redirect state is properly set
+  useEffect(() => {
+    // This helps ensure admin UI elements show after logout
+    if (redirectTo && redirectTo.includes("/admin")) {
+      console.log("Admin redirect detected", redirectTo);
+      // Force tab to login for admin
+      setActiveTab("login");
+    }
+  }, [redirectTo]);
 
   // Show loading spinner while checking verification
   if (isCheckingVerification) {

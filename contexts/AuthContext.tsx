@@ -234,8 +234,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      // First set up the URL for redirection with special parameters to bypass password check
-      const loginUrl = '/login?message=Successfully logged out&auth=true&forceSkip=true&tab=login';
+      // Get the current URL path to determine if we're coming from admin
+      const isFromAdmin = window.location.pathname.includes("/admin");
+      
+      // Construct the redirect URL with all necessary parameters
+      // Include redirectTo=admin parameter to ensure admin UI elements show after logout
+      const loginUrl = isFromAdmin 
+        ? '/login?message=Successfully+logged+out&auth=true&forceSkip=true&tab=login&redirectTo=/admin' 
+        : '/login?message=Successfully+logged+out&auth=true&forceSkip=true&tab=login';
       
       // Clear site password cookie using the API
       await fetch('/api/verify-password', {
@@ -245,26 +251,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.warn("Failed to clear site password through API, falling back to client-side clearing:", e);
       });
       
-      // Also try to clear it client-side as a backup
+      // Clear all cookies that might cause flashing during logout
       document.cookie = "site-password=; Max-Age=0; path=/; domain=" + window.location.hostname;
+      document.cookie = "site_verified=; Max-Age=0; path=/; domain=" + window.location.hostname;
+      document.cookie = "supabase-auth-token=; Max-Age=0; path=/; domain=" + window.location.hostname;
       
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
       }
       
+      // Clear state
       setUser(null);
       setSession(null);
       setIsAdmin(false);
       
       // Force a hard page reload to ensure a completely fresh state
+      // This helps prevent flashing by ensuring the page fully reloads with our parameters
       window.location.href = loginUrl;
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError(error.message || "An error occurred during sign out");
       
-      // Even if there's an error, try to redirect to login
-      window.location.href = '/login?auth=true&forceSkip=true&tab=login&error=logout';
+      // Even if there's an error, try to redirect to login with admin parameter if needed
+      const isFromAdmin = window.location.pathname.includes("/admin");
+      const errorUrl = isFromAdmin
+        ? '/login?auth=true&forceSkip=true&tab=login&error=logout&redirectTo=/admin'
+        : '/login?auth=true&forceSkip=true&tab=login&error=logout';
+      
+      window.location.href = errorUrl;
     }
   };
 
