@@ -54,7 +54,7 @@ export default function Header() {
           ))}
           {/* Temporary Admin Link for Development */}
           <Link
-            href="/admin"
+            href="/login?redirectTo=/admin&auth=true"
             className="text-sm font-semibold leading-6 text-muted-foreground hover:text-primary flex items-center"
           >
             <Shield className="h-4 w-4 mr-1" />
@@ -103,7 +103,7 @@ export default function Header() {
                   ))}
                   {/* Temporary Admin Link for Development (Mobile) */}
                   <Link
-                    href="/admin"
+                    href="/login?redirectTo=/admin&auth=true"
                     className="-mx-3 block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-muted-foreground hover:text-primary flex items-center"
                     onClick={() => setMobileMenuOpen(false)}
                   >
@@ -114,14 +114,14 @@ export default function Header() {
                 <div className="py-6 flex flex-col space-y-3">
                   <ThemeToggle />
                   <div onClick={() => setMobileMenuOpen(false)} className="w-full">
-                    <Link href="/login" className="w-full">
+                    <Link href="/login?auth=true" className="w-full">
                       <Button variant="outline" className="w-full">
                         Log in
                       </Button>
                     </Link>
                   </div>
                   <div onClick={() => setMobileMenuOpen(false)} className="w-full">
-                    <Link href="/login?tab=register" className="w-full">
+                    <Link href="/login?tab=register&auth=true" className="w-full">
                       <Button className="w-full">
                         Sign up
                       </Button>

@@ -29,7 +29,17 @@ export async function middleware(req: NextRequest) {
     // For login paths with trailing slash, redirect to non-trailing version
     if (req.nextUrl.pathname === '/login/') {
       const url = new URL('/login', req.url);
+      // Preserve any query params
+      req.nextUrl.searchParams.forEach((value, key) => {
+        url.searchParams.set(key, value);
+      });
       return NextResponse.redirect(url);
+    }
+    
+    // If this is the login page with auth=true param, just show the login form directly
+    if ((req.nextUrl.pathname === '/login') && req.nextUrl.searchParams.get('auth') === 'true') {
+      console.log('Auth flow detected, skipping password check');
+      return res;
     }
     
     console.log('Skipping password check for:', req.nextUrl.pathname);
@@ -73,6 +83,7 @@ export async function middleware(req: NextRequest) {
       // Send to login if not logged in
       const redirectUrl = new URL('/login', req.url);
       redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
+      redirectUrl.searchParams.set('auth', 'true'); // Add auth=true to skip password check
       return NextResponse.redirect(redirectUrl);
     }
     

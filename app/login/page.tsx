@@ -22,10 +22,11 @@ export default function LoginPage() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
   const redirectTo = searchParams.get("redirectTo") || "/";
+  const isAuthFlow = searchParams.get("auth") === "true"; // Check if this is direct auth flow
   
   // State for site password verification
-  const [isVerified, setIsVerified] = useState(false);
-  const [isCheckingVerification, setIsCheckingVerification] = useState(true);
+  const [isVerified, setIsVerified] = useState(isAuthFlow); // Skip password check if auth=true
+  const [isCheckingVerification, setIsCheckingVerification] = useState(!isAuthFlow);
   
   // States for the login/register forms
   const [activeTab, setActiveTab] = useState<string>(tabParam === "register" ? "register" : "login");
@@ -38,8 +39,15 @@ export default function LoginPage() {
   const [sitePasswordError, setSitePasswordError] = useState<string | null>(null);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
 
-  // Check if site password is already verified when page loads
+  // Check if site password is already verified when page loads - only if not direct auth flow
   useEffect(() => {
+    // Skip verification check if auth=true
+    if (isAuthFlow) {
+      setIsVerified(true);
+      setIsCheckingVerification(false);
+      return;
+    }
+    
     const checkVerification = async () => {
       try {
         setIsCheckingVerification(true);
@@ -83,7 +91,7 @@ export default function LoginPage() {
     };
 
     checkVerification();
-  }, []);
+  }, [isAuthFlow]);
 
   // Check if internet is working
   useEffect(() => {
@@ -108,9 +116,13 @@ export default function LoginPage() {
   // Send user to admin page if they're already logged in
   useEffect(() => {
     if (user) {
-      router.push("/admin");
+      if (redirectTo) {
+        router.push(redirectTo);
+      } else {
+        router.push("/admin");
+      }
     }
-  }, [user, router]);
+  }, [user, router, redirectTo]);
 
   // Handle when someone tries to log in
   const handleLogin = async (e: React.FormEvent) => {
