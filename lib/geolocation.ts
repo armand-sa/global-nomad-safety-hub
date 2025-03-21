@@ -179,6 +179,18 @@ export const getCurrentPosition = async (): Promise<GeolocationResult> => {
  */
 const getPositionWithOptions = (options: PositionOptions): Promise<GeolocationResult> => {
   return new Promise((resolve, reject) => {
+    // Make sure we're in a browser environment with geolocation
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      reject({
+        code: 2, // POSITION_UNAVAILABLE
+        message: "Geolocation is not supported by this browser or environment",
+        PERMISSION_DENIED: 1,
+        POSITION_UNAVAILABLE: 2,
+        TIMEOUT: 3,
+      });
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
@@ -199,7 +211,7 @@ const getPositionWithOptions = (options: PositionOptions): Promise<GeolocationRe
         
         switch (error.code) {
           case 1: // PERMISSION_DENIED
-            errorMessage = "Location access denied. Please enable location permissions in your browser settings.";
+            errorMessage = "Location access denied. Please enable location permissions in your browser settings and try again.";
             break;
           case 2: // POSITION_UNAVAILABLE
             errorMessage = "Unable to determine your current location. Please try again later.";
@@ -208,6 +220,9 @@ const getPositionWithOptions = (options: PositionOptions): Promise<GeolocationRe
             errorMessage = "Location request timed out. Please try again.";
             break;
         }
+        
+        // Log the error for debugging
+        console.warn(`Geolocation error (code ${error.code}): ${errorMessage}`);
         
         reject({
           code: error.code,

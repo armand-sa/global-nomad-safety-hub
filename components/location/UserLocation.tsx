@@ -387,14 +387,22 @@ export default function UserLocation() {
           <div className="flex flex-col sm:flex-row gap-3 w-full mt-4 max-w-[320px]">
             <button 
               onClick={handleRetry}
-              className="flex-1 font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-[2px] active:translate-y-[1px]"
+              className="flex-1 font-medium bg-primary/90 hover:bg-primary text-primary-foreground px-5 py-3 rounded-lg 
+              transition-all duration-300 flex items-center justify-center gap-2 
+              shadow-lg hover:shadow-xl transform hover:-translate-y-[2px] active:translate-y-[1px]
+              backdrop-blur-sm border border-primary/20"
+              aria-label="Enable location access"
             >
               <MapPin className="h-5 w-5" />
               {accuracyError ? "Try Again" : "Enable Location"}
             </button>
             <button 
               onClick={handleEnterManually}
-              className="flex-1 font-medium bg-background/80 hover:bg-background/60 text-foreground border border-border/50 backdrop-blur-sm px-5 py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow transform hover:-translate-y-[2px] active:translate-y-[1px]"
+              className="flex-1 font-medium bg-background/60 hover:bg-background/80 text-foreground 
+              border border-white/10 backdrop-blur-sm px-5 py-3 rounded-lg 
+              transition-all duration-300 flex items-center justify-center gap-2 
+              shadow-md hover:shadow-lg transform hover:-translate-y-[2px] active:translate-y-[1px]"
+              aria-label="Enter location manually"
             >
               <Search className="h-5 w-5" />
               Enter Manually

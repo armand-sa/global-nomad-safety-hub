@@ -4,6 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Globe, Shield, MapPin, Bell, PenTool, CreditCard } from "lucide-react";
 import UserLocation from "@/components/location/UserLocation";
 
+// Define consistent button styles
+const PrimaryButtonStyle = "bg-primary/90 hover:bg-primary shadow-lg hover:shadow-xl transform hover:-translate-y-[2px] active:translate-y-[1px] transition-all duration-300 border border-primary/20 backdrop-blur-sm";
+const OutlineButtonStyle = "bg-background/60 hover:bg-background/80 border-white/10 text-foreground shadow-md hover:shadow-lg transform hover:-translate-y-[2px] active:translate-y-[1px] transition-all duration-300 backdrop-blur-sm";
+
 // Add a styled subtitle component 
 function Subtitle() {
   return (
@@ -31,13 +35,13 @@ export default function Home() {
             <Subtitle />
             <UserLocation />
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6 animate-fade-in" style={{animationDelay: "0.6s"}}>
-              <Button asChild size="lg" className="gap-2">
+              <Button asChild size="lg" className={`gap-2 ${PrimaryButtonStyle}`}>
                 <Link href="/map">
                   <MapPin size={18} />
                   Explore Safety Map
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="gap-2">
+              <Button asChild size="lg" variant="outline" className={`gap-2 ${OutlineButtonStyle}`}>
                 <Link href="/pricing">
                   <CreditCard size={18} />
                   View Pricing
@@ -78,7 +82,7 @@ export default function Home() {
               ))}
             </div>
             <Link href="/map">
-              <Button>View All Destinations</Button>
+              <Button className={PrimaryButtonStyle}>View All Destinations</Button>
             </Link>
           </div>
         </div>
@@ -150,7 +154,7 @@ export default function Home() {
           </div>
           <div className="flex justify-center mt-6">
             <Link href="/map">
-              <Button>Explore Full Map</Button>
+              <Button className={PrimaryButtonStyle}>Explore Full Map</Button>
             </Link>
           </div>
         </div>
@@ -203,7 +207,7 @@ export default function Home() {
                 </CardContent>
                 <div className="p-6 pt-0">
                   <Link href={`/blog/${post.slug}`}>
-                    <Button variant="outline" size="sm">Read More</Button>
+                    <Button variant="outline" size="sm" className={OutlineButtonStyle}>Read More</Button>
                   </Link>
                 </div>
               </Card>
@@ -211,7 +215,7 @@ export default function Home() {
           </div>
           <div className="flex justify-center mt-8">
             <Link href="/blog">
-              <Button>View All Articles</Button>
+              <Button className={PrimaryButtonStyle}>View All Articles</Button>
             </Link>
           </div>
         </div>
@@ -241,7 +245,7 @@ export default function Home() {
                   type="email"
                   required
                 />
-                <Button type="submit">Subscribe</Button>
+                <Button type="submit" className={`${PrimaryButtonStyle} bg-background text-primary hover:bg-background/90 border-white/20`}>Subscribe</Button>
               </form>
               <p className="text-xs text-primary-foreground/80">
                 We respect your privacy. Unsubscribe at any time.
