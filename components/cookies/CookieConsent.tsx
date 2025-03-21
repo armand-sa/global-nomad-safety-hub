@@ -120,10 +120,10 @@ export default function CookieConsent() {
     return (
       <button 
         onClick={() => setShowBanner(true)}
-        className="fixed bottom-4 right-4 bg-gray-200 dark:bg-gray-800 text-sm p-2 rounded-full shadow-md hover:bg-gray-300 dark:hover:bg-gray-700 z-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="fixed bottom-4 right-4 bg-primary/10 text-sm p-2 rounded-full shadow-md hover:bg-primary/20 z-50 focus:outline-none focus:ring-2 focus:ring-primary"
         aria-label="Cookie Settings"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
       </button>
@@ -132,7 +132,7 @@ export default function CookieConsent() {
 
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 shadow-lg z-50 border-t border-gray-200 dark:border-gray-700"
+      className="fixed bottom-0 left-0 right-0 bg-card shadow-lg z-50 border-t border-border"
       role="dialog"
       aria-labelledby="cookie-consent-title"
     >
@@ -142,79 +142,84 @@ export default function CookieConsent() {
             <h3 id="cookie-consent-title" className="text-xl font-bold mb-4">Cookie Preferences</h3>
             
             <div className="space-y-4 mb-6">
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded">
+              <div className="p-4 bg-muted rounded-lg">
                 <div className="flex justify-between items-center">
-                  <label htmlFor="essential-checkbox" className="flex-1 cursor-not-allowed">
-                    <h4 className="font-medium">Essential Cookies</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Required for the website to function. Cannot be disabled.</p>
-                  </label>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Essential Cookies</h4>
+                    <p className="text-sm text-muted-foreground">Required for the website to function. Cannot be disabled.</p>
+                  </div>
                   <div className="relative">
-                    <input 
-                      id="essential-checkbox"
-                      type="checkbox" 
-                      checked={preferences.essential} 
-                      disabled={true}
-                      className="w-4 h-4 opacity-50 cursor-not-allowed" 
-                      aria-describedby="essential-description"
-                    />
-                    <span id="essential-description" className="sr-only">Essential cookies are always enabled</span>
+                    {/* Toggle Switch (always on and disabled) */}
+                    <div className="w-11 h-6 bg-primary rounded-full transition-colors duration-200 pointer-events-none opacity-90">
+                      <div className="absolute top-[2px] left-[2px] bg-white rounded-full w-5 h-5 transform translate-x-5 transition-transform duration-200"></div>
+                    </div>
+                    <span className="sr-only">Essential cookies are always enabled</span>
                   </div>
                 </div>
               </div>
               
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded">
+              <div className="p-4 bg-muted rounded-lg">
                 <div className="flex justify-between items-center">
-                  <label htmlFor="analytics-checkbox" className="flex-1 cursor-pointer">
-                    <h4 className="font-medium">Analytics Cookies</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400" id="analytics-description">Help us improve our website by collecting anonymous usage information.</p>
-                  </label>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Analytics Cookies</h4>
+                    <p className="text-sm text-muted-foreground">Help us improve our website by collecting anonymous usage information.</p>
+                  </div>
                   <div className="relative">
-                    <input 
-                      id="analytics-checkbox"
-                      type="checkbox" 
-                      checked={preferences.analytics} 
-                      onChange={() => togglePreference('analytics')}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 focus:ring-2" 
-                      aria-describedby="analytics-description"
-                    />
+                    {/* Toggle Switch */}
+                    <button 
+                      onClick={() => togglePreference('analytics')}
+                      className={`w-11 h-6 ${preferences.analytics ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-600'} rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary`}
+                      aria-checked="false"
+                      data-state={preferences.analytics ? "checked" : "unchecked"}
+                      role="switch"
+                      aria-label="Toggle analytics cookies"
+                    >
+                      <span className={`absolute top-[2px] left-[2px] bg-white rounded-full w-5 h-5 transform transition-transform duration-200 ${preferences.analytics ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                    </button>
                   </div>
                 </div>
               </div>
               
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded">
+              <div className="p-4 bg-muted rounded-lg">
                 <div className="flex justify-between items-center">
-                  <label htmlFor="marketing-checkbox" className="flex-1 cursor-pointer">
-                    <h4 className="font-medium">Marketing Cookies</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400" id="marketing-description">Used to track visitors across websites to display relevant advertisements.</p>
-                  </label>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Marketing Cookies</h4>
+                    <p className="text-sm text-muted-foreground">Used to track visitors across websites to display relevant advertisements.</p>
+                  </div>
                   <div className="relative">
-                    <input 
-                      id="marketing-checkbox"
-                      type="checkbox" 
-                      checked={preferences.marketing} 
-                      onChange={() => togglePreference('marketing')}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 focus:ring-2" 
-                      aria-describedby="marketing-description"
-                    />
+                    {/* Toggle Switch */}
+                    <button 
+                      onClick={() => togglePreference('marketing')}
+                      className={`w-11 h-6 ${preferences.marketing ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-600'} rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary`}
+                      aria-checked="false"
+                      data-state={preferences.marketing ? "checked" : "unchecked"}
+                      role="switch"
+                      aria-label="Toggle marketing cookies"
+                    >
+                      <span className={`absolute top-[2px] left-[2px] bg-white rounded-full w-5 h-5 transform transition-transform duration-200 ${preferences.marketing ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                    </button>
                   </div>
                 </div>
               </div>
               
-              <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded">
+              <div className="p-4 bg-muted rounded-lg">
                 <div className="flex justify-between items-center">
-                  <label htmlFor="personalization-checkbox" className="flex-1 cursor-pointer">
-                    <h4 className="font-medium">Personalization Cookies</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400" id="personalization-description">Remember your preferences to provide you with a personalized experience.</p>
-                  </label>
+                  <div className="flex-1">
+                    <h4 className="font-semibold">Personalization Cookies</h4>
+                    <p className="text-sm text-muted-foreground">Remember your preferences to provide you with a personalized experience.</p>
+                  </div>
                   <div className="relative">
-                    <input 
-                      id="personalization-checkbox"
-                      type="checkbox" 
-                      checked={preferences.personalization} 
-                      onChange={() => togglePreference('personalization')}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 focus:ring-2" 
-                      aria-describedby="personalization-description"
-                    />
+                    {/* Toggle Switch */}
+                    <button 
+                      onClick={() => togglePreference('personalization')}
+                      className={`w-11 h-6 ${preferences.personalization ? 'bg-primary' : 'bg-neutral-300 dark:bg-neutral-600'} rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary`}
+                      aria-checked="false"
+                      data-state={preferences.personalization ? "checked" : "unchecked"}
+                      role="switch"
+                      aria-label="Toggle personalization cookies"
+                    >
+                      <span className={`absolute top-[2px] left-[2px] bg-white rounded-full w-5 h-5 transform transition-transform duration-200 ${preferences.personalization ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -223,19 +228,19 @@ export default function CookieConsent() {
             <div className="flex flex-wrap gap-2 justify-end">
               <button
                 onClick={() => setShowPreferences(false)}
-                className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 text-muted-foreground hover:bg-muted rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 Back
               </button>
               <button
                 onClick={handleRejectAll}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 Reject All
               </button>
               <button
                 onClick={handleSavePreferences}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 Save Preferences
               </button>
@@ -247,17 +252,17 @@ export default function CookieConsent() {
               <h3 id="cookie-consent-title" className="text-lg font-bold mb-2">We Respect Your Privacy</h3>
               <p className="text-sm">
                 We use cookies to enhance your browsing experience, serve personalized ads or content, and analyze our traffic. By clicking "Accept All", you consent to our use of cookies. 
-                Visit our <Link href="/cookies" className="text-blue-500 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500">Cookie Policy</Link> to learn more.
+                Visit our <Link href="/cookies" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary">Cookie Policy</Link> to learn more.
               </p>
               
               <div className="mt-2 text-sm">
                 <p className="flex items-center">
                   <span className="mr-1">•</span>
-                  <Link href="/privacy" className="text-blue-500 hover:underline mr-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <Link href="/privacy" className="text-primary hover:underline mr-3 focus:outline-none focus:ring-2 focus:ring-primary">
                     Privacy Policy
                   </Link>
                   <span className="mr-1">•</span>
-                  <Link href="/terms" className="text-blue-500 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500">
+                  <Link href="/terms" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary">
                     Terms of Service
                   </Link>
                 </p>
@@ -267,19 +272,19 @@ export default function CookieConsent() {
             <div className="flex flex-wrap gap-2 mt-4 md:mt-0">
               <button
                 onClick={() => setShowPreferences(true)}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 Customize Settings
               </button>
               <button
                 onClick={handleRejectAll}
-                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 bg-muted hover:bg-muted/80 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 Reject All
               </button>
               <button
                 onClick={handleAcceptAll}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 Accept All
               </button>
