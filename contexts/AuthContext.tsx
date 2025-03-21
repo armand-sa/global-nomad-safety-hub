@@ -236,17 +236,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      // Clear site password cookie
+      // Clear site password cookie using the API
+      await fetch('/api/verify-password', {
+        method: 'DELETE',
+        cache: 'no-store'
+      });
+      
+      // Also try to clear it client-side as a backup
       document.cookie = "site-password=; Max-Age=0; path=/; domain=" + window.location.hostname;
       
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
       }
+      
       setUser(null);
       setSession(null);
       setIsAdmin(false);
-      router.push('/login?message=Successfully logged out&auth=true');
+      
+      // Force a page reload to ensure the site password check is triggered again
+      window.location.href = '/login?message=Successfully logged out&auth=true';
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError(error.message || "An error occurred during sign out");

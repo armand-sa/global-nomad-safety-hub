@@ -36,8 +36,8 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(url);
     }
     
-    // If this is the login page with auth=true param, just show the login form directly
-    if ((req.nextUrl.pathname === '/login') && req.nextUrl.searchParams.get('auth') === 'true') {
+    // Always bypass password check for login with auth=true param 
+    if (req.nextUrl.pathname === '/login' && req.nextUrl.searchParams.get('auth') === 'true') {
       console.log('Auth flow detected, skipping password check');
       return res;
     }

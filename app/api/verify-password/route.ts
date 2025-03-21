@@ -3,6 +3,34 @@ import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
 
+// DELETE method to clear the site password cookie (needed for logout)
+export async function DELETE() {
+  try {
+    console.log('DELETE /api/verify-password - Clearing password cookie');
+    
+    // Create a response
+    const response = NextResponse.json({ 
+      success: true, 
+      message: 'Cookie cleared' 
+    });
+    
+    // Clear the password cookie
+    response.cookies.set('site-password', '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'strict',
+      maxAge: 0, // Expire immediately
+      path: '/',
+    });
+    
+    console.log('Cookie cleared successfully');
+    return response;
+  } catch (error) {
+    console.error('Error clearing cookie:', error);
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
+
 // GET method to check if the password cookie exists and is valid
 export async function GET() {
   try {
