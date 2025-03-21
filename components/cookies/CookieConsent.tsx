@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter, usePathname } from 'next/navigation';
 import { getCookie, setCookie } from '@/lib/cookies';
 
 type CookiePreferences = {
@@ -12,6 +13,8 @@ type CookiePreferences = {
 };
 
 export default function CookieConsent() {
+  const router = useRouter();
+  const pathname = usePathname();
   const [showBanner, setShowBanner] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>({
@@ -20,6 +23,14 @@ export default function CookieConsent() {
     marketing: false,
     personalization: false,
   });
+
+  // Check if current page is a legal/policy page
+  const isLegalPage = 
+    pathname?.includes('/cookies') || 
+    pathname?.includes('/privacy') || 
+    pathname?.includes('/terms') || 
+    pathname?.includes('/disclaimer') || 
+    pathname?.includes('/acceptable-use');
 
   useEffect(() => {
     // Check if user has already made cookie choices
@@ -86,6 +97,14 @@ export default function CookieConsent() {
     setPreferences(prefs);
     setShowBanner(false);
     setShowPreferences(false);
+    
+    // If we're on a legal page and the user accepts cookies, redirect to home
+    if (isLegalPage) {
+      // Small delay to ensure cookie is set before redirecting
+      setTimeout(() => {
+        router.push('/');
+      }, 300);
+    }
   };
 
   const togglePreference = (key: keyof CookiePreferences) => {

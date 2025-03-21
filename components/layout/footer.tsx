@@ -30,6 +30,18 @@ export default function Footer() {
           <Link href="/terms" className="text-muted-foreground hover:text-primary">
             Terms
           </Link>
+          <Link href="/cookies" className="text-muted-foreground hover:text-primary">
+            Cookies
+          </Link>
+          <Link href="/disclaimer" className="text-muted-foreground hover:text-primary">
+            Disclaimer
+          </Link>
+          <Link href="/acceptable-use" className="text-muted-foreground hover:text-primary">
+            Acceptable Use
+          </Link>
+          <Link href="/forgot-password" className="text-muted-foreground hover:text-primary">
+            Forgot Password
+          </Link>
         </nav>
         <div className="mt-8 flex justify-center space-x-6">
           <a href="#" className="text-muted-foreground hover:text-primary">
