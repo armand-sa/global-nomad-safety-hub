@@ -3,12 +3,14 @@
 import Image from "next/image";
 import { useState } from "react";
 
-type CountryFlagProps = {
+type FlagSize = "xs" | "sm" | "md" | "lg" | "xl";
+
+interface CountryFlagProps {
   countryCode: string;
   countryName: string;
-  size?: "sm" | "md" | "lg";
+  size?: FlagSize;
   className?: string;
-};
+}
 
 export default function CountryFlag({
   countryCode,
@@ -17,65 +19,60 @@ export default function CountryFlag({
   className = "",
 }: CountryFlagProps) {
   const [hasError, setHasError] = useState(false);
-  
-  // Handle unknown country code
-  if (countryCode === "Unknown") {
-    return (
-      <span 
-        className={`text-xl ${className}`} 
-        role="img" 
-        aria-label="World Globe"
-      >
-        🌍
-      </span>
-    );
+
+  // Handle unknown country codes or errors by showing a globe emoji
+  if (countryCode === "Unknown" || hasError) {
+    return <span className={`text-2xl ${className}`}>🌎</span>;
   }
-  
-  // Map size to dimensions
-  const dimensions = {
-    sm: { width: 20, height: 15 },
-    md: { width: 24, height: 18 },
-    lg: { width: 32, height: 24 },
+
+  // Map size prop to dimensions
+  const sizeMap: Record<FlagSize, { width: number; height: number }> = {
+    xs: { width: 16, height: 12 },
+    sm: { width: 24, height: 18 },
+    md: { width: 32, height: 24 },
+    lg: { width: 48, height: 36 },
+    xl: { width: 64, height: 48 },
   };
-  
-  const { width, height } = dimensions[size];
-  
-  // If flag image fails to load, fall back to emoji
-  if (hasError) {
-    // Create flag emoji from country code
-    const codePoints = countryCode
-      .toUpperCase()
-      .split('')
-      .map(char => 127397 + char.charCodeAt(0));
+
+  const { width, height } = sizeMap[size];
+
+  // Create a flag emoji fallback from the country code (for when the image fails)
+  const getFlagEmoji = (code: string) => {
+    // Convert ISO 3166-1 alpha-2 country code to regional indicator symbols
+    const codePoints = Array.from(code.toUpperCase())
+      .map(char => 127397 + char.charCodeAt(0))
+      .map(codePoint => String.fromCodePoint(codePoint))
+      .join("");
     
-    const flagEmoji = String.fromCodePoint(...codePoints);
-    
-    return (
-      <span 
-        className={`text-xl ${className}`} 
-        role="img" 
-        aria-label={`Flag of ${countryName}`}
-      >
-        {flagEmoji}
-      </span>
-    );
-  }
-  
-  // Use flag icons from flagcdn.com (free service with SVG flags)
+    return codePoints;
+  };
+
+  // Use flagcdn.com for high-quality SVG flags
+  const flagUrl = `https://flagcdn.com/w${width * 2}/${countryCode.toLowerCase()}.png`;
+
   return (
     <div 
-      className={`overflow-hidden rounded-sm ${className}`}
-      style={{ width, height }}
+      className={`relative overflow-hidden rounded-full shadow-lg border border-black/5 dark:border-white/10 ${className}`}
+      style={{ 
+        width, 
+        height,
+        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
+      }}
     >
       <Image
-        src={`https://flagcdn.com/w80/${countryCode.toLowerCase()}.png`}
+        src={flagUrl}
         alt={`Flag of ${countryName}`}
         width={width}
         height={height}
         onError={() => setHasError(true)}
-        className="object-cover w-full h-full"
-        priority
+        className="object-cover"
+        style={{ 
+          objectFit: "cover", 
+          width: "100%", 
+          height: "100%" 
+        }}
       />
+      <div className="absolute inset-0 rounded-full shadow-inner"></div>
     </div>
   );
 } 

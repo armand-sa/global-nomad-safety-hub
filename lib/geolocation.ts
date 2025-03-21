@@ -13,7 +13,7 @@ export type LocationData = {
 
 /**
  * Gets the user's current position using the browser's Geolocation API
- * @returns Promise with coordinates and accuracy
+ * Enhanced for better accuracy
  */
 export const getCurrentPosition = (): Promise<{
   coords: { latitude: number; longitude: number; accuracy: number };
@@ -25,7 +25,7 @@ export const getCurrentPosition = (): Promise<{
       return;
     }
 
-    // Get current position with high accuracy
+    // Get current position with highest possible accuracy
     navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
@@ -54,8 +54,8 @@ export const getCurrentPosition = (): Promise<{
         reject(new Error(errorMessage));
       },
       {
-        enableHighAccuracy: true, // Get the best possible result
-        timeout: 10000, // 10 seconds
+        enableHighAccuracy: true, // Get the most accurate result possible
+        timeout: 15000, // Wait up to 15 seconds
         maximumAge: 0, // Don't use cached position
       }
     );
@@ -63,12 +63,9 @@ export const getCurrentPosition = (): Promise<{
 };
 
 /**
- * Converts coordinates to a human-readable address using reverse geocoding
- * @param latitude Latitude coordinate
- * @param longitude Longitude coordinate
- * @returns Promise with location details
+ * Converts coordinates to a human-readable address using OpenStreetMap API
  */
-export const reverseGeocode = async (
+export const reverseGeocodeOSM = async (
   latitude: number,
   longitude: number
 ): Promise<Partial<LocationData>> => {
@@ -85,7 +82,7 @@ export const reverseGeocode = async (
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch location data");
+      throw new Error("Failed to fetch location data from OSM");
     }
 
     const data = await response.json();
@@ -99,6 +96,7 @@ export const reverseGeocode = async (
                   data.address.district || 
                   data.address.quarter || 
                   data.address.hamlet ||
+                  data.address.city ||
                   "Unknown";
                   
     const state = data.address.state || 
@@ -121,7 +119,71 @@ export const reverseGeocode = async (
       countryCode,
     };
   } catch (error) {
-    console.error("Error in reverse geocoding:", error);
+    console.error("Error in OSM reverse geocoding:", error);
+    throw error;
+  }
+};
+
+/**
+ * Converts coordinates to a human-readable address using BigDataCloud API
+ */
+export const reverseGeocodeBDC = async (
+  latitude: number,
+  longitude: number
+): Promise<Partial<LocationData>> => {
+  try {
+    // Using BigDataCloud API as a secondary source (free tier with reasonable limits)
+    const response = await fetch(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=${navigator.language || "en"}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch location data from BigDataCloud");
+    }
+
+    const data = await response.json();
+    
+    return {
+      suburb: data.locality || data.city || "Unknown",
+      state: data.principalSubdivision || data.adminArea || "Unknown",
+      country: data.countryName || "Unknown",
+      countryCode: data.countryCode || "Unknown",
+    };
+  } catch (error) {
+    console.error("Error in BigDataCloud reverse geocoding:", error);
+    throw error;
+  }
+};
+
+/**
+ * Converts coordinates to a human-readable address using multiple services
+ * This approach tries multiple geocoding services for better accuracy
+ */
+export const reverseGeocode = async (
+  latitude: number,
+  longitude: number
+): Promise<Partial<LocationData>> => {
+  try {
+    // Try OpenStreetMap first (most detailed for many regions)
+    const osmData = await reverseGeocodeOSM(latitude, longitude).catch(() => null);
+    
+    // Also try BigDataCloud (often better for cities/suburbs)
+    const bdcData = await reverseGeocodeBDC(latitude, longitude).catch(() => null);
+    
+    // Combine results, preferring OSM but filling gaps with BDC
+    return {
+      // For city/suburb, prefer BigDataCloud as it's often more accurate for city names
+      suburb: (bdcData?.suburb !== "Unknown" ? bdcData?.suburb : osmData?.suburb) || "Unknown",
+      
+      // For state/province, OSM is typically more accurate
+      state: (osmData?.state !== "Unknown" ? osmData?.state : bdcData?.state) || "Unknown",
+      
+      // For country info, both are reliable but OSM has better coverage
+      country: osmData?.country || bdcData?.country || "Unknown",
+      countryCode: osmData?.countryCode || bdcData?.countryCode || "Unknown",
+    };
+  } catch (error) {
+    console.error("Error in combined reverse geocoding:", error);
     return {
       suburb: "Unknown",
       state: "Unknown",
@@ -132,13 +194,18 @@ export const reverseGeocode = async (
 };
 
 /**
- * Get a user-friendly string for location accuracy
- * @param accuracyInMeters Accuracy in meters from Geolocation API
- * @returns Human-readable accuracy string
+ * Get a user-friendly string for location accuracy with human-readable values
  */
 export const getAccuracyString = (accuracyInMeters: number): string => {
   // Get user's locale for number formatting
   const userLocale = navigator.language || "en-US";
+  
+  // Format number based on magnitude
+  const formatWithUnit = (value: number, unit: string) => {
+    // Round to nearest whole number for cleaner display
+    const rounded = Math.round(value);
+    return `Accurate within ${rounded.toLocaleString(userLocale)} ${unit}`;
+  };
   
   // Determine if we should use imperial (feet) or metric (meters)
   const useImperial = ["US", "GB", "LR", "MM"].includes(
@@ -149,21 +216,25 @@ export const getAccuracyString = (accuracyInMeters: number): string => {
     // Convert meters to feet (1m ≈ 3.28084ft)
     const accuracyInFeet = accuracyInMeters * 3.28084;
     
-    // Format the number with appropriate rounding
-    const formattedFeet = Math.round(accuracyInFeet).toLocaleString(userLocale);
+    // Use yards for medium distances (3ft = 1yd)
+    if (accuracyInFeet > 30) {
+      return formatWithUnit(accuracyInFeet / 3, "yards");
+    }
     
-    return `Accurate within ${formattedFeet} feet`;
+    return formatWithUnit(accuracyInFeet, "feet");
   } else {
-    // Round to nearest meter for cleaner display
-    const formattedMeters = Math.round(accuracyInMeters).toLocaleString(userLocale);
+    // For metric, use km for large distances
+    if (accuracyInMeters >= 1000) {
+      return formatWithUnit(accuracyInMeters / 1000, "kilometers");
+    }
     
-    return `Accurate within ${formattedMeters} meters`;
+    return formatWithUnit(accuracyInMeters, "meters");
   }
 };
 
 /**
  * Complete function to get location data including coordinates and address details
- * @returns Promise with complete location data
+ * Uses multiple sources to maximize accuracy
  */
 export const getFullLocationData = async (): Promise<LocationData> => {
   try {
@@ -172,7 +243,7 @@ export const getFullLocationData = async (): Promise<LocationData> => {
     
     const { latitude, longitude, accuracy } = position.coords;
     
-    // Step 2: Convert coordinates to address details
+    // Step 2: Convert coordinates to address details using multiple services
     const addressData = await reverseGeocode(latitude, longitude);
     
     // Step 3: Combine the data
