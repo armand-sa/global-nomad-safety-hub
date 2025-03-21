@@ -114,14 +114,14 @@ export default function Header() {
                 <div className="py-6 flex flex-col space-y-3">
                   <ThemeToggle />
                   <div onClick={() => setMobileMenuOpen(false)} className="w-full">
-                    <Link href="/login?auth=true" className="w-full">
+                    <Link href="/login?auth=true&tab=login" className="w-full">
                       <Button variant="outline" className="w-full">
                         Log in
                       </Button>
                     </Link>
                   </div>
                   <div onClick={() => setMobileMenuOpen(false)} className="w-full">
-                    <Link href="/login?tab=register&auth=true" className="w-full">
+                    <Link href="/login?auth=true&tab=register" className="w-full">
                       <Button className="w-full">
                         Sign up
                       </Button>

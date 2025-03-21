@@ -20,10 +20,10 @@ export function AuthButton() {
   if (!user) {
     return (
       <>
-        <Link href="/login?auth=true">
+        <Link href="/login?auth=true&tab=login">
           <Button variant="outline" size="sm">Log in</Button>
         </Link>
-        <Link href="/login?tab=register&auth=true">
+        <Link href="/login?auth=true&tab=register">
           <Button size="sm">Sign up</Button>
         </Link>
       </>

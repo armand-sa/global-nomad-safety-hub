@@ -115,7 +115,8 @@ export default function AdminDashboard() {
           <div className="flex flex-col space-y-8">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold">Alerts Management</h1>
+                <h1 className="text-3xl font-bold">Welcome to Global Nomad Safety</h1>
+                <p className="text-xl text-primary font-semibold mb-2">Admin Access</p>
                 <p className="text-muted-foreground">Create and manage safety alerts for your users</p>
               </div>
               

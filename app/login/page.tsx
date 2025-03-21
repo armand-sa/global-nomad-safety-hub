@@ -130,6 +130,13 @@ export default function LoginPage() {
     }
   }, [user, router, redirectTo]);
 
+  // Update the active tab when the tab URL parameter changes
+  useEffect(() => {
+    if (tabParam === "register" || tabParam === "login") {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
   // Handle when someone tries to log in
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
