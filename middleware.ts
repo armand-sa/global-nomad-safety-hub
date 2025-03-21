@@ -11,7 +11,12 @@ export async function middleware(req: NextRequest) {
   if (
     req.nextUrl.pathname.startsWith('/_next') ||
     req.nextUrl.pathname.startsWith('/api') ||
-    req.nextUrl.pathname.includes('favicon.ico')
+    req.nextUrl.pathname.includes('favicon.ico') ||
+    req.nextUrl.pathname.includes('.svg') ||
+    req.nextUrl.pathname.includes('.png') ||
+    req.nextUrl.pathname.includes('.jpg') ||
+    req.nextUrl.pathname.includes('.jpeg') ||
+    req.nextUrl.pathname.includes('.ico')
   ) {
     return res;
   }
@@ -23,20 +28,35 @@ export async function middleware(req: NextRequest) {
   // 3. SITE PASSWORD PROTECTION
   // Check the site password (except for login page)
   if (!req.nextUrl.pathname.startsWith('/login')) {
-    const hasPassword = req.cookies.get('site-password');
+    // Get the site password from the cookie
+    const sitePasswordCookie = req.cookies.get('site-password');
     const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
+    
+    // Add debugging data to response headers (only in development)
+    const debugHeaders = new Headers(res.headers);
+    debugHeaders.set('x-debug-has-cookie', sitePasswordCookie ? 'yes' : 'no');
+    debugHeaders.set('x-debug-has-password-env', correctPassword ? 'yes' : 'no');
 
-    // Add debugging headers (these are safe to expose in dev)
-    if (process.env.NODE_ENV !== 'production') {
-      res.headers.set('X-Debug-Has-Password', hasPassword ? 'true' : 'false');
-      res.headers.set('X-Debug-Has-Correct-Env', correctPassword ? 'true' : 'false');
-    }
-
-    if (!hasPassword || hasPassword.value !== correctPassword) {
-      // Redirect to login page with intended destination
-      const loginUrl = new URL('/login', req.url);
-      loginUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
+    // Check if the password cookie exists and matches the correct password
+    if (!sitePasswordCookie || sitePasswordCookie.value !== correctPassword) {
+      console.log('Password protection: redirecting to login page');
+      // Password is missing or incorrect, redirect to login page
+      const url = new URL('/login', req.url);
+      
+      // Add the current URL as a redirect destination
+      if (req.nextUrl.pathname !== '/') {
+        url.searchParams.set('redirectTo', req.nextUrl.pathname);
+      }
+      
+      // Create a new response with the modified headers
+      const redirectRes = NextResponse.redirect(url);
+      
+      // Copy debug headers to the redirect response
+      for (const [key, value] of debugHeaders.entries()) {
+        redirectRes.headers.set(key, value);
+      }
+      
+      return redirectRes;
     }
   }
 
@@ -65,6 +85,14 @@ export async function middleware(req: NextRequest) {
 // Apply middleware to all routes
 export const config = {
   matcher: [
-    '/(.*)',  // Match all routes
+    /*
+     * Match all request paths except:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - images (files in the public/images directory)
+     * - api/verify-password (password verification API)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|images|public).*)',
   ],
 };

@@ -150,20 +150,33 @@ export default function LoginPage() {
     setSitePasswordError(null);
 
     try {
+      // For direct debugging - will show in browser console
+      console.log("Submitting site password");
+      
       const formData = new FormData(e.target as HTMLFormElement);
+      
+      // Log what we're sending (don't do this in production!)
+      console.log("Password being sent:", formData.get('password'));
+      
       const response = await fetch('/api/verify-password', {
         method: 'POST',
         body: formData
       });
 
+      const data = await response.json();
+      console.log("Response from API:", data);
+
       if (!response.ok) {
+        console.error("Password verification failed:", data);
         setSitePasswordError("Invalid site password");
         return;
       }
 
+      console.log("Password verified successfully");
       // Password is correct, refresh the page to apply cookie
       window.location.reload();
     } catch (error) {
+      console.error("Password verification error:", error);
       setSitePasswordError("Failed to verify password. Please try again.");
     }
   };
