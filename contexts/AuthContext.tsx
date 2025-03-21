@@ -243,7 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
       setIsAdmin(false);
-      router.push('/');
+      router.push('/login?message=Successfully logged out');
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError(error.message || "An error occurred during sign out");

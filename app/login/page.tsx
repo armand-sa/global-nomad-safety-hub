@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
-import { Loader2, AlertCircle, Wifi, WifiOff, CheckCircle2, Lock } from "lucide-react";
+import { Loader2, AlertCircle, Wifi, WifiOff, CheckCircle2, Lock, Eye, EyeOff } from "lucide-react";
 
 // Main login page component
 export default function LoginPage() {
@@ -23,6 +23,7 @@ export default function LoginPage() {
   const tabParam = searchParams.get("tab");
   const redirectTo = searchParams.get("redirectTo") || "/";
   const isAuthFlow = searchParams.get("auth") === "true"; // Check if this is direct auth flow
+  const logoutMessage = searchParams.get("message");
   
   // State for site password verification
   const [isVerified, setIsVerified] = useState(isAuthFlow); // Skip password check if auth=true
@@ -38,6 +39,11 @@ export default function LoginPage() {
   const [sitePassword, setSitePassword] = useState("");
   const [sitePasswordError, setSitePasswordError] = useState<string | null>(null);
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  
+  // Password visibility toggles
+  const [showSitePassword, setShowSitePassword] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   // Check if site password is already verified when page loads - only if not direct auth flow
   useEffect(() => {
@@ -279,17 +285,30 @@ export default function LoginPage() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="site-password">Site Password</Label>
-                  <Input
-                    id="site-password"
-                    name="password"
-                    type="password"
-                    placeholder="Enter site password"
-                    value={sitePassword}
-                    onChange={(e) => setSitePassword(e.target.value)}
-                    required
-                    autoFocus
-                    className="border-2"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="site-password"
+                      name="password"
+                      type={showSitePassword ? "text" : "password"}
+                      placeholder="Enter site password"
+                      value={sitePassword}
+                      onChange={(e) => setSitePassword(e.target.value)}
+                      required
+                      autoFocus
+                      className="border-2 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSitePassword(!showSitePassword)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3"
+                    >
+                      {showSitePassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
                   {sitePasswordError && (
                     <p className="text-sm font-medium text-destructive">{sitePasswordError}</p>
                   )}
@@ -314,6 +333,15 @@ export default function LoginPage() {
                 <WifiOff className="h-4 w-4" />
                 <AlertDescription>
                   You are currently offline. Please check your internet connection.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {logoutMessage && (
+              <Alert>
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                <AlertDescription className="text-green-500">
+                  {logoutMessage}
                 </AlertDescription>
               </Alert>
             )}
@@ -361,13 +389,27 @@ export default function LoginPage() {
                             Forgot password?
                           </Link>
                         </div>
-                        <Input 
-                          id="password" 
-                          type="password" 
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required 
-                        />
+                        <div className="relative">
+                          <Input 
+                            id="password" 
+                            type={showLoginPassword ? "text" : "password"} 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required 
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowLoginPassword(!showLoginPassword)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3"
+                          >
+                            {showLoginPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="relative">
@@ -385,7 +427,14 @@ export default function LoginPage() {
                           variant="outline" 
                           onClick={() => handleOAuthLogin('google')}
                           disabled={isLoading || !networkStatus}
+                          className="flex items-center justify-center gap-2"
                         >
+                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" fill="none">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                          </svg>
                           Google
                         </Button>
                         <Button 
@@ -393,7 +442,12 @@ export default function LoginPage() {
                           variant="outline" 
                           onClick={() => handleOAuthLogin('apple')}
                           disabled={isLoading || !networkStatus}
+                          className="flex items-center justify-center gap-2"
                         >
+                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" fill="currentColor">
+                            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.4-1.09-.41-2.09-.42-3.23 0-1.44.56-2.45.37-3.34-.38-2.55-2.16-4.18-10.8-.93-15.5 1.5-2.16 3.8-2.27 4.8-2.03.77.18 2.13.73 3.01.73.73 0 2.17-.6 3.22-.65 1.36-.07 2.73.56 3.67 1.52-3.03 1.97-2.53 6.48.88 8.13-.8 2.18-1.82 4.34-3.67 5.47l-.33 2.3z" />
+                            <path d="M15.28 3.37c-.78 1-.82 1.92-.74 3.13-1.98-.1-3.34-1.47-4.07-3.23 1.26-.67 2.8-.71 3.33-.71.4 0 .93.06 1.48.26v.55z" />
+                          </svg>
                           Apple
                         </Button>
                       </div>
@@ -441,13 +495,27 @@ export default function LoginPage() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="new-password">Password</Label>
-                        <Input 
-                          id="new-password" 
-                          type="password" 
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required 
-                        />
+                        <div className="relative">
+                          <Input 
+                            id="new-password" 
+                            type={showSignupPassword ? "text" : "password"} 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required 
+                            className="pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowSignupPassword(!showSignupPassword)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3"
+                          >
+                            {showSignupPassword ? (
+                              <EyeOff className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="relative">
@@ -465,7 +533,14 @@ export default function LoginPage() {
                           variant="outline" 
                           onClick={() => handleOAuthLogin('google')}
                           disabled={isLoading || !networkStatus}
+                          className="flex items-center justify-center gap-2"
                         >
+                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" fill="none">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                          </svg>
                           Google
                         </Button>
                         <Button 
@@ -473,7 +548,12 @@ export default function LoginPage() {
                           variant="outline" 
                           onClick={() => handleOAuthLogin('apple')}
                           disabled={isLoading || !networkStatus}
+                          className="flex items-center justify-center gap-2"
                         >
+                          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="1.5" fill="currentColor">
+                            <path d="M17.05 20.28c-.98.95-2.05.8-3.08.4-1.09-.41-2.09-.42-3.23 0-1.44.56-2.45.37-3.34-.38-2.55-2.16-4.18-10.8-.93-15.5 1.5-2.16 3.8-2.27 4.8-2.03.77.18 2.13.73 3.01.73.73 0 2.17-.6 3.22-.65 1.36-.07 2.73.56 3.67 1.52-3.03 1.97-2.53 6.48.88 8.13-.8 2.18-1.82 4.34-3.67 5.47l-.33 2.3z" />
+                            <path d="M15.28 3.37c-.78 1-.82 1.92-.74 3.13-1.98-.1-3.34-1.47-4.07-3.23 1.26-.67 2.8-.71 3.33-.71.4 0 .93.06 1.48.26v.55z" />
+                          </svg>
                           Apple
                         </Button>
                       </div>
