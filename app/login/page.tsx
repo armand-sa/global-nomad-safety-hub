@@ -33,16 +33,22 @@ export default function LoginPage() {
   // Check if the redirect is to admin page
   const isAdminRedirect = redirectTo.includes("/admin");
   
+  // More reliable way to determine if we should show password form - NEVER show it when coming from logout
+  const bypassPasswordCheck = isAuthFlow || forceSkip || !!logoutMessage;
+  
   // State for site password verification - immediately consider verified with special conditions
-  const showPasswordForm = !isAuthFlow && !forceSkip && !logoutMessage;
   const [isVerified, setIsVerified] = useState(() => {
-    // Always verified if auth=true, forceSkip=true, or we have a logout message
-    return isAuthFlow || forceSkip || !!logoutMessage;
+    // Always verified if we're bypassing the password check
+    return bypassPasswordCheck;
   });
+  
   const [isCheckingVerification, setIsCheckingVerification] = useState(() => {
-    // Only need to check verification if we're not already verified by URL parameters
-    return !(isAuthFlow || forceSkip || !!logoutMessage);
+    // Only need to check verification if we're not already bypassing the check
+    return !bypassPasswordCheck;
   });
+  
+  // Track specifically if we're coming from a logout flow to prevent form flashing
+  const [isComingFromLogout, setIsComingFromLogout] = useState(() => !!logoutMessage);
   
   // States for the login/register forms
   const [activeTab, setActiveTab] = useState<string>(tabParam === "register" ? "register" : "login");
@@ -286,19 +292,45 @@ export default function LoginPage() {
     }
   }, [shouldReload]);
 
+  // Check for localStorage flag on component mount - CRUCIAL for preventing flashing
+  useEffect(() => {
+    // Check if we have the logout flag in localStorage
+    const justLoggedOut = localStorage.getItem('just_logged_out') === 'true';
+    
+    if (justLoggedOut) {
+      console.log('Detected logout flow via localStorage flag');
+      
+      // Set the state to prevent password form from showing
+      setIsComingFromLogout(true);
+      setIsVerified(true);
+      setIsCheckingVerification(false);
+      
+      // Clear the flag to not interfere with future page loads
+      localStorage.removeItem('just_logged_out');
+      
+      // Ensure login tab is selected
+      setActiveTab('login');
+    }
+  }, []);
+
   // Add a useEffect to handle URL parameters and cookies after logout
   useEffect(() => {
-    // If we have a logout message, ensure we're using the login tab
+    // If we have a logout message, this is a logout flow
     if (logoutMessage) {
+      // Remember we're coming from logout to prevent password form flashing
+      setIsComingFromLogout(true);
       setActiveTab("login");
       
-      // Clear any site password cookie to prevent flashing
+      // Force clear any site password cookies
       document.cookie = "site-password=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       document.cookie = "site_verified=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       
-      // Force verified state to true to avoid password form
+      // Force verified state to true to avoid password form completely
       setIsVerified(true);
       setIsCheckingVerification(false);
+      
+      // Set the localStorage flag as a backup
+      localStorage.setItem('just_logged_out', 'true');
     }
   }, [logoutMessage]);
 
@@ -346,8 +378,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Only show password form if not bypassed AND not on first render with logout parameters */}
-        {(!isVerified && showPasswordForm && !(initialRender.current && (forceSkip || logoutMessage))) ? (
+        {/* Improved condition to NEVER show password form when coming from logout */}
+        {(!isVerified && !isComingFromLogout && !bypassPasswordCheck) ? (
           <Card className="mb-6 border-2 border-primary border-opacity-50 shadow-lg">
             <form onSubmit={handleSitePassword}>
               <CardHeader>

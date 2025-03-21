@@ -238,23 +238,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isFromAdmin = window.location.pathname.includes("/admin");
       
       // Construct the redirect URL with all necessary parameters
-      // Include redirectTo=admin parameter to ensure admin UI elements show after logout
+      // Use more URL parameters to completely bypass password checks
       const loginUrl = isFromAdmin 
         ? '/login?message=Successfully+logged+out&auth=true&forceSkip=true&tab=login&redirectTo=/admin' 
         : '/login?message=Successfully+logged+out&auth=true&forceSkip=true&tab=login';
       
-      // Clear site password cookie using the API
-      await fetch('/api/verify-password', {
-        method: 'DELETE',
-        cache: 'no-store'
-      }).catch(e => {
-        console.warn("Failed to clear site password through API, falling back to client-side clearing:", e);
-      });
+      // First try to preload the login page before even starting logout
+      // This helps prevent flashing by ensuring cache is warm
+      const preloadLink = document.createElement('link');
+      preloadLink.rel = 'preload';
+      preloadLink.as = 'document';
+      preloadLink.href = loginUrl;
+      document.head.appendChild(preloadLink);
       
-      // Clear all cookies that might cause flashing during logout
+      // Clear site password cookie using the API
+      try {
+        await fetch('/api/verify-password', {
+          method: 'DELETE',
+          cache: 'no-store'
+        });
+      } catch (e) {
+        console.warn("Failed to clear site password through API, falling back to client-side clearing:", e);
+      }
+      
+      // Aggressively clear all cookies that might cause flashing during logout
+      // Use multiple techniques to ensure cookies are properly cleared
       document.cookie = "site-password=; Max-Age=0; path=/; domain=" + window.location.hostname;
+      document.cookie = "site-password=; Max-Age=0; path=/;";
       document.cookie = "site_verified=; Max-Age=0; path=/; domain=" + window.location.hostname;
+      document.cookie = "site_verified=; Max-Age=0; path=/;";
       document.cookie = "supabase-auth-token=; Max-Age=0; path=/; domain=" + window.location.hostname;
+      document.cookie = "supabase-auth-token=; Max-Age=0; path=/;";
+      
+      // Set a localStorage flag to indicate we're in logout flow
+      // This can be checked on page load to prevent flashing
+      localStorage.setItem('just_logged_out', 'true');
       
       // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
@@ -267,8 +285,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setIsAdmin(false);
       
-      // Force a hard page reload to ensure a completely fresh state
-      // This helps prevent flashing by ensuring the page fully reloads with our parameters
+      // Force a hard page reload with our carefully crafted URL parameters
       window.location.href = loginUrl;
     } catch (error: any) {
       console.error("Sign out error:", error);
