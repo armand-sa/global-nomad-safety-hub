@@ -9,7 +9,7 @@ type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   error: string | null;
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, rememberMe: boolean = false) => {
     setError(null);
     setIsLoading(true);
     try {
@@ -133,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Try to sign in with a timeout
       let signInPromise = supabase.auth.signInWithPassword({
         email,
-        password,
+        password
       });
 
       // Set a timeout for the sign-in operation
@@ -152,6 +152,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data?.session) {
+        // Save remember me preference to localStorage if selected
+        if (rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          localStorage.removeItem('rememberMe');
+        }
+        
         setSession(data.session);
         setUser(data.user);
         setIsAdmin(data.user?.app_metadata?.role === 'admin' || false);
@@ -236,8 +243,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      // First set up the URL for redirection with auth=true to bypass password check
-      const loginUrl = '/login?message=Successfully logged out&auth=true&reload=true';
+      // First set up the URL for redirection with special parameters to bypass password check
+      const loginUrl = '/login?message=Successfully logged out&auth=true&forceSkip=true&tab=login';
       
       // Clear site password cookie using the API
       await fetch('/api/verify-password', {
@@ -259,15 +266,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(null);
       setIsAdmin(false);
       
-      // Force a page reload to ensure the site password check is triggered again
-      // Use a direct location change instead of router to ensure a full page reload
+      // Force a hard page reload to ensure a completely fresh state
       window.location.href = loginUrl;
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError(error.message || "An error occurred during sign out");
       
       // Even if there's an error, try to redirect to login
-      window.location.href = '/login?auth=true&error=logout';
+      window.location.href = '/login?auth=true&forceSkip=true&tab=login&error=logout';
     }
   };
 

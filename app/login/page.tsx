@@ -1,7 +1,7 @@
 "use client";
 
 // Import all the tools we need
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,9 @@ import { Loader2, AlertCircle, Wifi, WifiOff, CheckCircle2, Lock, Eye, EyeOff } 
 
 // Main login page component
 export default function LoginPage() {
+  // Add a ref to track initial render
+  const initialRender = useRef(true);
+  
   // Get user info and login functions from our auth system
   const { user, signIn, signUp, error, isLoading } = useAuth();
   const router = useRouter();
@@ -23,22 +26,24 @@ export default function LoginPage() {
   const tabParam = searchParams.get("tab");
   const redirectTo = searchParams.get("redirectTo") || "/";
   const isAuthFlow = searchParams.get("auth") === "true"; // Check if this is direct auth flow
+  const forceSkip = searchParams.get("forceSkip") === "true"; // Force skip the site password check
   const logoutMessage = searchParams.get("message");
   const shouldReload = searchParams.get("reload") === "true"; // Check if we should handle page reload
   
   // Check if the redirect is to admin page
   const isAdminRedirect = redirectTo.includes("/admin");
   
-  // State for site password verification - immediately consider verified on logout flow
-  const showPasswordForm = !isAuthFlow && !logoutMessage;
-  const [isVerified, setIsVerified] = useState(isAuthFlow || !!logoutMessage); // Skip password check if auth=true or coming from logout
-  const [isCheckingVerification, setIsCheckingVerification] = useState(!isAuthFlow && !logoutMessage);
+  // State for site password verification - immediately consider verified with special conditions
+  const showPasswordForm = !isAuthFlow && !forceSkip && !logoutMessage;
+  const [isVerified, setIsVerified] = useState(isAuthFlow || forceSkip || !!logoutMessage); // Skip check with any of these flags
+  const [isCheckingVerification, setIsCheckingVerification] = useState(!isAuthFlow && !forceSkip && !logoutMessage);
   
   // States for the login/register forms
   const [activeTab, setActiveTab] = useState<string>(tabParam === "register" ? "register" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [networkStatus, setNetworkStatus] = useState<boolean>(true);
   const [sitePassword, setSitePassword] = useState("");
@@ -52,12 +57,15 @@ export default function LoginPage() {
 
   // Check if site password is already verified when page loads - only if not direct auth flow
   useEffect(() => {
-    // Skip verification check if auth=true or coming from logout
-    if (isAuthFlow || logoutMessage) {
+    // Skip verification check with special parameters
+    if (isAuthFlow || forceSkip || logoutMessage) {
       setIsVerified(true);
       setIsCheckingVerification(false);
       return;
     }
+    
+    // Mark that we've passed initial render
+    initialRender.current = false;
     
     const checkVerification = async () => {
       try {
@@ -102,7 +110,7 @@ export default function LoginPage() {
     };
 
     checkVerification();
-  }, [isAuthFlow, logoutMessage]);
+  }, [isAuthFlow, forceSkip, logoutMessage]);
 
   // Check if internet is working
   useEffect(() => {
@@ -142,6 +150,13 @@ export default function LoginPage() {
     }
   }, [tabParam]);
 
+  // Always reset tab to login for admin redirects
+  useEffect(() => {
+    if (isAdminRedirect && activeTab === "register") {
+      setActiveTab("login");
+    }
+  }, [isAdminRedirect, activeTab]);
+
   // Handle when someone tries to log in
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,7 +174,7 @@ export default function LoginPage() {
       return;
     }
     
-    await signIn(email, password);
+    await signIn(email, password, rememberMe);
   };
 
   // Handle when someone tries to create an account
@@ -299,7 +314,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {!isVerified && showPasswordForm ? (
+        {/* Only show password form if not bypassed AND not on first render with logout parameters */}
+        {(!isVerified && showPasswordForm && !(initialRender.current && (forceSkip || logoutMessage))) ? (
           <Card className="mb-6 border-2 border-primary border-opacity-50 shadow-lg">
             <form onSubmit={handleSitePassword}>
               <CardHeader>
@@ -389,8 +405,15 @@ export default function LoginPage() {
                 <TabsTrigger value="login" className="text-base font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   Login
                 </TabsTrigger>
-                <TabsTrigger value="register" className="text-base font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Register
+                <TabsTrigger 
+                  value="register" 
+                  disabled={isAdminRedirect}
+                  className={`text-base font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ${
+                    isAdminRedirect ? 'opacity-50 line-through cursor-not-allowed' : ''
+                  }`}
+                  title={isAdminRedirect ? "Registration disabled for admin access" : "Create a new account"}
+                >
+                  Register {isAdminRedirect && <span className="text-xs ml-1">(Admin only)</span>}
                 </TabsTrigger>
               </TabsList>
 
@@ -443,6 +466,20 @@ export default function LoginPage() {
                             )}
                           </button>
                         </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox" 
+                          id="remember-me"
+                          checked={rememberMe}
+                          onChange={(e) => setRememberMe(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          aria-label="Remember me on this device"
+                        />
+                        <Label htmlFor="remember-me" className="text-sm text-muted-foreground">
+                          Remember me on this device
+                        </Label>
                       </div>
                       
                       <div className="relative">

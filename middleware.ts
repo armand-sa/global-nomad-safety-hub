@@ -39,6 +39,15 @@ export async function middleware(req: NextRequest) {
     // Always bypass password check for login with auth=true param 
     if (req.nextUrl.pathname === '/login' && req.nextUrl.searchParams.get('auth') === 'true') {
       console.log('Auth flow detected, skipping password check');
+      
+      // When forceSkip is present, guarantee we clear any existing password cookie to prevent issues
+      if (req.nextUrl.searchParams.get('forceSkip') === 'true') {
+        console.log('Force skip detected, ensuring password cookie is cleared');
+        const response = NextResponse.next();
+        response.cookies.delete('site-password');
+        return response;
+      }
+      
       return res;
     }
     
