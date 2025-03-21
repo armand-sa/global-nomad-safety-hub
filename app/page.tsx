@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, Shield, MapPin, Bell, PenTool } from "lucide-react";
+import UserLocation from "@/components/location/UserLocation";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
                 Stay Safe Anywhere in the World
               </h1>
+              <UserLocation />
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                 Real-time safety insights, alerts, and recommendations for digital nomads and global travelers.
               </p>
