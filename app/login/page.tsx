@@ -286,6 +286,23 @@ export default function LoginPage() {
     }
   }, [shouldReload]);
 
+  // Add a useEffect to handle URL parameters and cookies after logout
+  useEffect(() => {
+    // If we have a logout message, ensure we're using the login tab
+    if (logoutMessage) {
+      setActiveTab("login");
+      
+      // Clear any site password cookie to prevent flashing
+      document.cookie = "site_verified=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      
+      // Set isAdminRedirect on logout if the redirectTo parameter indicates admin
+      if (redirectTo && redirectTo.includes("/admin")) {
+        // This ensures admin UI elements show properly after logout
+        console.log("Admin redirect detected after logout");
+      }
+    }
+  }, [logoutMessage, redirectTo]);
+
   // Show loading spinner while checking verification
   if (isCheckingVerification) {
     return (
@@ -304,7 +321,7 @@ export default function LoginPage() {
         <div className="flex flex-col space-y-2 text-center">
           <h1 className="text-2xl font-semibold tracking-tight">
             Welcome to Global Nomad Safety
-            {isAdminRedirect && activeTab === "login" && (
+            {(isAdminRedirect || redirectTo.includes("/admin")) && (
               <span className="block text-xl text-primary mt-1">Admin Portal Access</span>
             )}
           </h1>
@@ -312,7 +329,7 @@ export default function LoginPage() {
             {!isVerified 
               ? "This site is password protected during development" 
               : activeTab === "login" 
-                ? isAdminRedirect 
+                ? (isAdminRedirect || redirectTo.includes("/admin"))
                   ? <strong>Sign in to access your admin account</strong>
                   : <strong>Sign in to access your account</strong>
                 : <strong>Create an account to get started</strong>
@@ -417,13 +434,13 @@ export default function LoginPage() {
                   </TabsTrigger>
                   <TabsTrigger 
                     value="register" 
-                    disabled={isAdminRedirect}
+                    disabled={(isAdminRedirect || redirectTo.includes("/admin"))}
                     className={`text-base font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground ${
-                      isAdminRedirect ? 'opacity-50 line-through cursor-not-allowed' : ''
+                      (isAdminRedirect || redirectTo.includes("/admin")) ? 'opacity-50 line-through cursor-not-allowed' : ''
                     }`}
-                    title={isAdminRedirect ? "Registration disabled for admin access" : "Create a new account"}
+                    title={(isAdminRedirect || redirectTo.includes("/admin")) ? "Registration disabled for admin access" : "Create a new account"}
                   >
-                    Register {isAdminRedirect && <span className="ml-1 text-xs">(Admin Only)</span>}
+                    Register {(isAdminRedirect || redirectTo.includes("/admin")) && <span className="ml-1 text-xs">(Admin Only)</span>}
                   </TabsTrigger>
                 </TabsList>
 
