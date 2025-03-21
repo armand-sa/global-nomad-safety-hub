@@ -236,6 +236,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // Clear site password cookie
+      document.cookie = "site-password=; Max-Age=0; path=/; domain=" + window.location.hostname;
+      
       const { error } = await supabase.auth.signOut();
       if (error) {
         throw error;
@@ -243,7 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
       setIsAdmin(false);
-      router.push('/login?message=Successfully logged out');
+      router.push('/login?message=Successfully logged out&auth=true');
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError(error.message || "An error occurred during sign out");
