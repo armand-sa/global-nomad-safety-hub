@@ -417,7 +417,19 @@ export default function UserLocation() {
     return null;
   }
 
-  const { suburb, city, state, countryCode, country, accuracy, source } = locationData;
+  const {
+    city,
+    suburb,
+    state,
+    country,
+    countryCode,
+    accuracy,
+    latitude,
+    longitude,
+    source
+  } = locationData;
+
+  // Format accuracy string
   const accuracyString = formatAccuracy(accuracy);
   
   // Determine best location name to display:
@@ -444,20 +456,22 @@ export default function UserLocation() {
         highPrecision ? 'shadow-xl' : 'shadow-md'
       )}
     >
-      {/* Glassmorphism background effects */}
-      <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/20 to-background/40 pointer-events-none"></div>
-      <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "8s"}}></div>
-      <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "10s", animationDelay: "1s"}}></div>
+      {/* Clean up the glassmorphism effect */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background/30 via-background/10 to-background/30 pointer-events-none"></div>
       
+      {/* Subtle glow effects */}
       {isPrecise && (
-        <div className="absolute inset-0 bg-primary/5 opacity-50 pointer-events-none"></div>
+        <>
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "8s"}}></div>
+          <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/5 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "10s", animationDelay: "1s"}}></div>
+        </>
       )}
       
-      {/* Dynamic map background only if high precision and not mobile */}
+      {/* Map background with reduced opacity */}
       {showDynamicMap && isPrecise && (
         <div 
-          className="absolute top-0 left-0 w-full h-full opacity-20 pointer-events-none transition-opacity duration-1000 ease-in-out"
-          style={{opacity: showDynamicMap ? "0.15" : "0"}}
+          className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none transition-opacity duration-1000 ease-in-out"
+          style={{opacity: showDynamicMap ? "0.1" : "0"}}
         >
           <img 
             src={mapImageUrl} 
@@ -468,23 +482,20 @@ export default function UserLocation() {
         </div>
       )}
       
-      {/* Animated Circles */}
+      {/* Simplified animation circles */}
       {highPrecision && (
-        <>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full border border-primary/20 animate-pulse opacity-40 pointer-events-none"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 rounded-full border border-primary/10 animate-pulse opacity-30 pointer-events-none" style={{animationDuration: "3s", animationDelay: "0.5s"}}></div>
-        </>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-40 h-40 rounded-full border border-primary/10 animate-pulse opacity-30 pointer-events-none"></div>
       )}
       
-      {/* Content container */}
+      {/* Content container with better organization */}
       <div className="relative z-10">
         {/* Flag and location info */}
         <div className="flex flex-col items-center">
-          {/* Country flag with animation */}
+          {/* Country flag with more prominent border */}
           <div 
             className={cn(
               "mb-4 overflow-hidden",
-              isPrecise ? "shadow-md" : "",
+              "rounded-sm",
               highPrecision ? "animate-float" : ""
             )}
             style={{
@@ -496,12 +507,12 @@ export default function UserLocation() {
             <CountryFlag 
               countryCode={countryCode} 
               countryName={country} 
-              size="xl" 
-              className={highPrecision ? "shadow-lg" : "shadow-md"}
+              size="xl"
+              showBorder={true}
             />
           </div>
           
-          {/* Location text */}
+          {/* Location text with improved spacing */}
           <div 
             className="flex flex-col items-center text-center"
             style={{
@@ -510,6 +521,7 @@ export default function UserLocation() {
               animationFillMode: 'both'
             }}
           >
+            {/* More prominent location name */}
             <h3 className="text-2xl font-bold tracking-wide text-foreground">
               {primaryLocation}
               {state !== "Unknown" && primaryLocation !== state && (
@@ -519,42 +531,31 @@ export default function UserLocation() {
             
             {/* Country name */}
             <p className="text-md text-muted-foreground mt-1">{country}</p>
-            
-            {/* Location accuracy and source */}
-            <div className="text-xs text-muted-foreground mt-3 mb-1 flex flex-col items-center gap-1.5">
-              <div className="flex items-center gap-1.5">
-                {isManualLocation ? (
-                  <span className="flex items-center gap-1.5">
-                    <Search className="w-3.5 h-3.5 text-primary/80" />
-                    <span>Manually selected location</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1.5">
-                    <Navigation className="w-3.5 h-3.5 text-primary/80" />
-                    <span className="flex items-center gap-1.5">
-                      {accuracyString}
-                      {isPrecise && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/20 text-primary">
-                          {highPrecision ? "Ultra Precision" : "High Precision"}
-                        </span>
-                      )}
-                    </span>
-                  </span>
-                )}
-              </div>
-              
-              {/* Show data source if available */}
-              {source && source !== "None" && (
-                <span className="text-[10px] text-muted-foreground/70">
-                  Source: {source}
-                </span>
-              )}
-            </div>
           </div>
+
+          {/* Clean status indicator */}
+          <div 
+            className="mt-5 px-4 py-2 rounded-lg bg-primary/5 border border-primary/10 inline-flex items-center gap-2"
+            style={{
+              animation: showLocation ? 'fade-in-up 0.8s ease-out' : 'none',
+              animationDelay: '0.4s',
+              animationFillMode: 'both'
+            }}
+          >
+            <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+            <span className="text-sm font-medium">
+              Ultra-Precise Location Active
+            </span>
+          </div>
+          
+          {/* Simplified location info */}
+          <p className="text-xs text-muted-foreground mt-3 mb-3 text-center max-w-[280px]">
+            Receiving real-time safety alerts for this exact location
+          </p>
           
           {/* Action buttons */}
           <div 
-            className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:gap-3"
+            className="mt-5 flex flex-wrap items-center justify-center gap-3"
             style={{
               animation: showLocation ? 'fade-in-up 0.8s ease-out' : 'none',
               animationDelay: '0.5s',
@@ -567,7 +568,7 @@ export default function UserLocation() {
                 onClick={handleRefresh}
                 disabled={isRefreshing}
                 className="text-xs sm:text-sm flex items-center justify-center gap-1.5 text-primary-foreground hover:text-primary-foreground transition-all
-                         bg-primary hover:bg-primary/90 px-3.5 py-2 rounded-lg disabled:opacity-50 shadow-md hover:shadow-lg transform hover:scale-105"
+                         bg-primary hover:bg-primary/90 px-3.5 py-2 rounded-lg disabled:opacity-50 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
                 aria-label="Refresh location"
               >
                 <RefreshCw 
@@ -577,11 +578,11 @@ export default function UserLocation() {
               </button>
             )}
             
-            {/* Manual search button */}
+            {/* Clean manual search button */}
             <button 
               onClick={handleEnterManually}
               className="text-xs sm:text-sm flex items-center justify-center gap-1.5 text-foreground hover:text-foreground/90 transition-all
-                       bg-background hover:bg-background/80 border border-border/50 backdrop-blur-sm px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:scale-105"
+                       bg-background hover:bg-background/80 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:-translate-y-0.5"
               aria-label="Enter location manually"
             >
               <Search className="h-4 w-4" /> 
@@ -589,37 +590,16 @@ export default function UserLocation() {
             </button>
             
             {/* Map button */}
-            <button 
-              onClick={() => window.location.href = '/map'}
-              className="text-xs sm:text-sm flex items-center justify-center gap-1.5 text-foreground/80 hover:text-foreground/100 transition-all
-                       bg-background/50 border border-border/30 backdrop-blur-sm hover:border-primary/30 px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:scale-105"
-              aria-label="View on map"
+            <a 
+              href="/map" 
+              className="text-xs sm:text-sm flex items-center justify-center gap-1.5 text-foreground hover:text-foreground/90 transition-all
+                      bg-background hover:bg-background/80 border border-white/10 backdrop-blur-sm px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:-translate-y-0.5"
+              aria-label="View safety map"
             >
               <MapIcon className="h-4 w-4" /> 
               <span>View Safety Map</span>
-            </button>
+            </a>
           </div>
-          
-          {/* Safety indicator */}
-          {highPrecision && (
-            <div 
-              className="mt-5 w-full max-w-[320px] backdrop-blur-sm rounded-lg border border-white/5 dark:border-white/5 shadow-sm p-3 flex items-center gap-3
-                       bg-gradient-to-r from-green-500/10 via-green-500/5 to-green-500/10"
-              style={{
-                animation: showLocation ? 'fade-in-up 0.9s ease-out' : 'none',
-                animationDelay: '0.7s',
-                animationFillMode: 'both'
-              }}
-            >
-              <div className="bg-green-500/20 p-2 rounded-full">
-                <Shield className="w-5 h-5 text-green-500" />
-              </div>
-              <div className="flex-1">
-                <h4 className="text-sm font-medium">Ultra-Precise Location Active</h4>
-                <p className="text-xs text-muted-foreground">Receiving real-time safety alerts for this exact location</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

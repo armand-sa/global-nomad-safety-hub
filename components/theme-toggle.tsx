@@ -56,10 +56,10 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         className={cn(
           "w-4 h-4 transition-all duration-300",
           theme === "dark" 
-            ? "text-yellow-400 opacity-100" 
+            ? "opacity-100 text-foreground" 
             : "opacity-0 absolute"
         )}
-        strokeWidth={2.5}
+        strokeWidth={2}
       />
       
       {/* Moon icon - visible in light mode */}
@@ -67,10 +67,10 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
         className={cn(
           "w-4 h-4 transition-all duration-300",
           theme === "light" 
-            ? "text-primary opacity-100" 
+            ? "opacity-100 text-foreground" 
             : "opacity-0 absolute"
         )}
-        strokeWidth={2.5}
+        strokeWidth={2}
       />
     </button>
   );

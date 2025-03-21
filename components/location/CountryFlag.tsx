@@ -39,7 +39,7 @@ export default function CountryFlag({
   countryName = "",
   size = "md",
   className = "",
-  showBorder = false,
+  showBorder = true,
 }: CountryFlagProps) {
   const [loading, setLoading] = useState(true);
   const [currentSourceIndex, setCurrentSourceIndex] = useState(0);
@@ -159,6 +159,7 @@ export default function CountryFlag({
       <div className={cn(
         "flex items-center justify-center bg-muted",
         getSizeClass(size).container,
+        showBorder && "border border-white/10 dark:border-white/5",
         className
       )}>
         <Globe className={cn("text-muted-foreground", getSizeClass(size).icon)} />
@@ -172,7 +173,7 @@ export default function CountryFlag({
       <div className={cn(
         "flex items-center justify-center",
         getSizeClass(size).container,
-        showBorder && "border border-border",
+        showBorder && "border border-white/10 dark:border-white/5",
         className
       )}>
         <span className={cn("leading-none", getSizeClass(size).emoji)}>{REGION_FLAGS[normalizedCode]}</span>
@@ -188,7 +189,7 @@ export default function CountryFlag({
       className={cn(
         "relative overflow-hidden bg-background",
         getSizeClass(size).container,
-        showBorder && "border border-border",
+        showBorder && "border border-white/10 dark:border-white/5",
         className
       )}
     >
