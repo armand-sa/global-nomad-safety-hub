@@ -130,21 +130,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error("Supabase configuration is missing. Please contact the administrator.");
       }
 
-      // Try to sign in with a timeout
-      let signInPromise = supabase.auth.signInWithPassword({
+      // First, sign in with just email and password
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
-
-      // Set a timeout for the sign-in operation
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Authentication request timed out. Please try again.")), 10000);
-      });
-
-      // Use Promise.race to implement a timeout
-      const result = await Promise.race([signInPromise, timeoutPromise]) as Awaited<typeof signInPromise>;
       
-      const { data, error } = result;
+      // If remember me is selected and signin was successful, update the session
+      if (rememberMe && data?.session && !error) {
+        await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token
+        });
+      }
 
       if (error) {
         console.error("Sign in error:", error);
@@ -152,13 +150,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data?.session) {
-        // Save remember me preference to localStorage if selected
-        if (rememberMe) {
-          localStorage.setItem('rememberMe', 'true');
-        } else {
-          localStorage.removeItem('rememberMe');
-        }
-        
         setSession(data.session);
         setUser(data.user);
         setIsAdmin(data.user?.app_metadata?.role === 'admin' || false);
