@@ -52,11 +52,11 @@ export default function CountryFlag({
 
   return (
     <div 
-      className={`relative overflow-hidden rounded-full shadow-lg border border-black/5 dark:border-white/10 ${className}`}
+      className={`relative overflow-hidden shadow-md border border-black/10 dark:border-white/5 ${className}`}
       style={{ 
         width, 
         height,
-        boxShadow: "0 2px 8px rgba(0, 0, 0, 0.15)"
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.12)"
       }}
     >
       <Image
@@ -72,7 +72,6 @@ export default function CountryFlag({
           height: "100%" 
         }}
       />
-      <div className="absolute inset-0 rounded-full shadow-inner"></div>
     </div>
   );
-} 
+}
