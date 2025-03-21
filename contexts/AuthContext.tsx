@@ -236,10 +236,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      // First set up the URL for redirection with auth=true to bypass password check
+      const loginUrl = '/login?message=Successfully logged out&auth=true&reload=true';
+      
       // Clear site password cookie using the API
       await fetch('/api/verify-password', {
         method: 'DELETE',
         cache: 'no-store'
+      }).catch(e => {
+        console.warn("Failed to clear site password through API, falling back to client-side clearing:", e);
       });
       
       // Also try to clear it client-side as a backup
@@ -255,10 +260,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(false);
       
       // Force a page reload to ensure the site password check is triggered again
-      window.location.href = '/login?message=Successfully logged out&auth=true';
+      // Use a direct location change instead of router to ensure a full page reload
+      window.location.href = loginUrl;
     } catch (error: any) {
       console.error("Sign out error:", error);
       setError(error.message || "An error occurred during sign out");
+      
+      // Even if there's an error, try to redirect to login
+      window.location.href = '/login?auth=true&error=logout';
     }
   };
 
