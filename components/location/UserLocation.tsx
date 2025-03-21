@@ -6,6 +6,7 @@ import {
   getFullLocationData, 
   formatAccuracy, 
   getLocationDataFromSearch,
+  getCurrentPosition,
   type LocationData, 
   type LocationSearchResult 
 } from "@/lib/geolocation";
@@ -62,6 +63,7 @@ const animationKeyframes = `
 export default function UserLocation() {
   const [locationData, setLocationData] = useState<LocationData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingStage, setLoadingStage] = useState<'initial' | 'gps' | 'geocoding'>('initial');
   const [error, setError] = useState<string | null>(null);
   const [showLocation, setShowLocation] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
@@ -91,11 +93,20 @@ export default function UserLocation() {
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
+    setLoadingStage('initial');
     setError(null);
     setShowLocation(false);
 
     const fetchLocationData = async () => {
       try {
+        setLoadingStage('gps');
+        // Get position first
+        const position = await getCurrentPosition();
+        
+        if (!isMounted) return;
+        
+        setLoadingStage('geocoding');
+        // Then get full location data
         const data = await getFullLocationData();
         
         if (isMounted) {
@@ -186,7 +197,20 @@ export default function UserLocation() {
           <Globe className="h-8 w-8 text-primary/40" />
           <Loader2 className="h-8 w-8 text-primary absolute inset-0 animate-spin" />
         </div>
-        <span className="text-sm font-medium mt-2">Locating you...</span>
+        <span className="text-sm font-medium mt-2">
+          {loadingStage === 'initial' && "Preparing..."}
+          {loadingStage === 'gps' && "Getting your coordinates..."}
+          {loadingStage === 'geocoding' && "Finding your location..."}
+        </span>
+        <div className="w-48 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full mt-2 overflow-hidden">
+          <div 
+            className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+            style={{ 
+              width: loadingStage === 'initial' ? '10%' : 
+                    loadingStage === 'gps' ? '40%' : '80%' 
+            }}
+          ></div>
+        </div>
       </div>
     );
   }
@@ -278,12 +302,23 @@ export default function UserLocation() {
         >
           <h3 className="text-base font-semibold tracking-wide">
             {primaryLocation}
-            {state !== "Unknown" && (
+            {state !== "Unknown" && primaryLocation !== state && (
               <span className="font-normal">, {state}</span>
             )}
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {isManualLocation ? "Manually selected location" : accuracyString}
+            {isManualLocation ? (
+              "Manually selected location"
+            ) : (
+              <span className="flex items-center justify-center gap-1">
+                <span>{accuracyString}</span>
+                {accuracy < 100 && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                    High Precision
+                  </span>
+                )}
+              </span>
+            )}
           </p>
           
           {/* Action buttons */}

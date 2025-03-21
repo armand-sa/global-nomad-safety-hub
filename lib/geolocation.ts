@@ -56,14 +56,44 @@ export type LocationSearchResult = {
   longitude: number;
 };
 
+// Constants for caching
+const LOCATION_CACHE_KEY = 'gnsh_location_cache';
+const LOCATION_CACHE_EXPIRY = 15 * 60 * 1000; // 15 minutes in milliseconds
+
 /**
- * Gets the user's current position using the Geolocation API
+ * Gets the user's current position using the Geolocation API with enhanced accuracy
  */
 export const getCurrentPosition = async (): Promise<GeolocationResult> => {
   if (!navigator.geolocation) {
     throw new Error("Geolocation is not supported by this browser");
   }
 
+  // First try high accuracy (may take longer but more precise)
+  try {
+    return await getPositionWithOptions({
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    });
+  } catch (error: any) {
+    // If high accuracy fails with timeout, try again with lower accuracy
+    if (error.code === 3) { // TIMEOUT
+      console.log("High accuracy position timed out, trying with lower accuracy...");
+      return await getPositionWithOptions({
+        enableHighAccuracy: false,
+        timeout: 10000,
+        maximumAge: 60000 // Allow cached positions up to 1 minute old
+      });
+    }
+    // For other errors (permission denied, position unavailable), just throw
+    throw error;
+  }
+};
+
+/**
+ * Helper function to get position with specific options
+ */
+const getPositionWithOptions = (options: PositionOptions): Promise<GeolocationResult> => {
   return new Promise((resolve, reject) => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -103,106 +133,50 @@ export const getCurrentPosition = async (): Promise<GeolocationResult> => {
           TIMEOUT: 3,
         });
       },
-      { 
-        enableHighAccuracy: true, 
-        timeout: 10000, 
-        maximumAge: 0 
-      }
+      options
     );
   });
 };
 
 /**
- * Converts coordinates to a human-readable address using OpenStreetMap API
+ * Converts coordinates to a human-readable address using BigDataCloud API
+ * This is used as a fallback when OpenStreetMap fails
  */
-export const reverseGeocodeOSM = async (
+export const reverseGeocodeBigDataCloud = async (
   latitude: number,
   longitude: number
-): Promise<Partial<LocationData>> => {
+): Promise<ReverseGeocodingResult> => {
   try {
-    // Using OpenStreetMap Nominatim API for reverse geocoding (free and no API key required)
+    // BigDataCloud offers a free reverse geocoding API that doesn't require an API key
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?` +
+      `latitude=${latitude}&longitude=${longitude}&` +
+      `localityLanguage=en`,
       {
-        headers: {
-          "Accept-Language": navigator.language || "en-US", // Get results in user's language
-          "User-Agent": "GlobalNomadSafetyHub/1.0", // Required by Nominatim
-        },
+        signal: AbortSignal.timeout(10000),
       }
     );
 
     if (!response.ok) {
-      throw new Error("Failed to fetch location data from OSM");
+      throw new Error(`Failed to reverse geocode with BigDataCloud: ${response.statusText}`);
     }
 
     const data = await response.json();
     
-    // Extract relevant address components
-    const suburb = data.address.suburb || 
-                  data.address.neighbourhood || 
-                  data.address.quarter || 
-                  data.address.hamlet ||
-                  "Unknown";
-                  
-    const city = data.address.city || 
-                data.address.town ||
-                data.address.village || 
-                data.address.city_district || 
-                data.address.district ||
-                "Unknown";
-                
-    const state = data.address.state || 
-                 data.address.province || 
-                 data.address.region || 
-                 data.address.county ||
-                 "Unknown";
-                 
-    const country = data.address.country || "Unknown";
-    
-    // Get the two-letter country code
-    const countryCode = data.address.country_code ? 
-                       data.address.country_code.toUpperCase() : 
-                       "Unknown";
-
-    return {
-      suburb,
-      city,
-      state,
-      country,
-      countryCode,
-    };
-  } catch (error) {
-    console.error("Error in OSM reverse geocoding:", error);
-    throw error;
-  }
-};
-
-/**
- * Converts coordinates to a human-readable address using BigDataCloud API
- */
-export const reverseGeocodeBDC = async (
-  latitude: number,
-  longitude: number
-): Promise<Partial<LocationData>> => {
-  try {
-    // Using BigDataCloud API as a secondary source (free tier with reasonable limits)
-    const response = await fetch(
-      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=${navigator.language || "en"}`
-    );
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch location data from BigDataCloud");
-    }
-
-    const data = await response.json();
-    
-    return {
-      suburb: data.locality || "Unknown",
-      city: data.city || "Unknown",
-      state: data.principalSubdivision || data.adminArea || "Unknown",
+    const result: ReverseGeocodingResult = {
       country: data.countryName || "Unknown",
       countryCode: data.countryCode || "Unknown",
+      state: data.principalSubdivision || data.administrativeArea || "Unknown",
+      city: data.city || data.locality || "Unknown",
+      suburb: data.locality || data.localityInfo?.informative?.find((i: any) => i.type === "suburb")?.name || "Unknown",
+      street: data.road || null,
+      postalCode: data.postcode || null,
     };
+
+    // Console log for debugging
+    console.log("BigDataCloud fallback result:", result);
+
+    return result;
   } catch (error) {
     console.error("Error in BigDataCloud reverse geocoding:", error);
     throw error;
@@ -210,20 +184,58 @@ export const reverseGeocodeBDC = async (
 };
 
 /**
- * Converts coordinates to a human-readable address using multiple services
- * This approach tries multiple geocoding services for better accuracy
+ * Converts coordinates to a human-readable address with fallback
  */
 export const reverseGeocode = async (
   latitude: number,
   longitude: number
 ): Promise<ReverseGeocodingResult> => {
   try {
+    try {
+      // Try OpenStreetMap first (primary source)
+      const osmResult = await reverseGeocodeOpenStreetMap(latitude, longitude);
+      return osmResult;
+    } catch (error) {
+      console.log("OpenStreetMap geocoding failed, trying fallback...");
+      // If OpenStreetMap fails, try BigDataCloud as fallback
+      const bigDataCloudResult = await reverseGeocodeBigDataCloud(latitude, longitude);
+      return bigDataCloudResult;
+    }
+  } catch (error) {
+    console.error("All geocoding services failed:", error);
+    // If all services fail, return a basic response with coordinates
+    return {
+      country: "Unknown",
+      countryCode: "Unknown",
+      state: "Unknown",
+      city: "Unknown",
+      suburb: "Unknown",
+      street: null,
+      postalCode: null,
+    };
+  }
+};
+
+/**
+ * Converts coordinates to a human-readable address using OpenStreetMap
+ */
+export const reverseGeocodeOpenStreetMap = async (
+  latitude: number,
+  longitude: number
+): Promise<ReverseGeocodingResult> => {
+  try {
+    // Use OpenStreetMap with enhanced settings for better accuracy
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1&accept-language=en`,
+      `https://nominatim.openstreetmap.org/reverse?` +
+      `lat=${latitude}&lon=${longitude}&` +
+      `format=json&addressdetails=1&accept-language=en&` +
+      `zoom=18&namedetails=1&extratags=1`,
       {
         headers: {
           "User-Agent": "GlobalNomadSafetyHub/1.0",
         },
+        // Increase timeout for better results
+        signal: AbortSignal.timeout(15000),
       }
     );
 
@@ -233,20 +245,50 @@ export const reverseGeocode = async (
 
     const data = await response.json();
     
+    // Get suburb with fallbacks for more specific areas
+    const suburb = 
+      data.address.suburb || 
+      data.address.neighbourhood || 
+      data.address.residential || 
+      data.address.quarter || 
+      data.address.hamlet ||
+      data.address.district ||
+      "Unknown";
+    
+    // Get city with fallbacks for different administrative regions
+    const city = 
+      data.address.city || 
+      data.address.town || 
+      data.address.village || 
+      data.address.municipality || 
+      data.address.city_district || 
+      "Unknown";
+    
+    // Get state with fallbacks for different regional divisions
+    const state = 
+      data.address.state || 
+      data.address.province || 
+      data.address.county || 
+      data.address.region || 
+      "Unknown";
+    
     const result: ReverseGeocodingResult = {
       country: data.address.country || "Unknown",
       countryCode: data.address.country_code ? data.address.country_code.toUpperCase() : "Unknown",
-      state: data.address.state || data.address.county || data.address.region || "Unknown",
-      city: data.address.city || data.address.town || data.address.village || data.address.municipality || "Unknown",
-      suburb: data.address.suburb || data.address.neighbourhood || data.address.district || "Unknown",
-      street: data.address.road || null,
+      state,
+      city,
+      suburb,
+      street: data.address.road || data.address.street || null,
       postalCode: data.address.postcode || null,
     };
 
+    // Console log for debugging
+    console.log("OpenStreetMap geocoding result:", result);
+
     return result;
   } catch (error) {
-    console.error("Error in reverse geocoding:", error);
-    throw new Error("Failed to get location details. Please try again later.");
+    console.error("Error in OpenStreetMap reverse geocoding:", error);
+    throw error;
   }
 };
 
@@ -316,10 +358,19 @@ export const searchLocationByName = async (query: string): Promise<LocationSearc
 };
 
 /**
- * Gets complete location data including reverse geocoding
+ * Gets complete location data including reverse geocoding with caching
  */
 export const getFullLocationData = async (): Promise<LocationData> => {
   try {
+    // Check for cached location data first
+    const cachedData = getCachedLocationData();
+    if (cachedData) {
+      console.log("Using cached location data");
+      return cachedData;
+    }
+    
+    console.log("Fetching fresh location data...");
+    
     // Get user's coordinates
     const position = await getCurrentPosition();
     const { latitude, longitude, accuracy } = position.coords;
@@ -327,7 +378,7 @@ export const getFullLocationData = async (): Promise<LocationData> => {
     // Get location details through reverse geocoding
     const locationDetails = await reverseGeocode(latitude, longitude);
     
-    return {
+    const locationData: LocationData = {
       suburb: locationDetails.suburb,
       city: locationDetails.city,
       state: locationDetails.state,
@@ -338,9 +389,57 @@ export const getFullLocationData = async (): Promise<LocationData> => {
       accuracy,
       accuracyString: formatAccuracy(accuracy)
     };
+    
+    // Cache the location data
+    cacheLocationData(locationData);
+    
+    return locationData;
   } catch (error) {
     console.error("Error getting full location data:", error);
     throw error;
+  }
+};
+
+/**
+ * Cache location data to localStorage with expiry
+ */
+const cacheLocationData = (data: LocationData): void => {
+  try {
+    const cacheEntry = {
+      data,
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(LOCATION_CACHE_KEY, JSON.stringify(cacheEntry));
+    console.log("Location data cached successfully");
+  } catch (error) {
+    console.error("Failed to cache location data:", error);
+    // Non-critical error, so we just log it
+  }
+};
+
+/**
+ * Retrieve cached location data if it exists and is not expired
+ */
+const getCachedLocationData = (): LocationData | null => {
+  try {
+    const cachedEntry = localStorage.getItem(LOCATION_CACHE_KEY);
+    if (!cachedEntry) return null;
+    
+    const { data, timestamp } = JSON.parse(cachedEntry);
+    const now = Date.now();
+    
+    // Check if the cached data has expired
+    if (now - timestamp > LOCATION_CACHE_EXPIRY) {
+      console.log("Cached location data expired");
+      localStorage.removeItem(LOCATION_CACHE_KEY);
+      return null;
+    }
+    
+    return data as LocationData;
+  } catch (error) {
+    console.error("Failed to retrieve cached location data:", error);
+    return null;
   }
 };
 

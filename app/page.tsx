@@ -8,10 +8,10 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="py-12 md:py-20 bg-gradient-to-b from-primary/5 to-transparent px-4">
+      <section className="py-12 md:py-20 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent px-4">
         <div className="container mx-auto max-w-5xl">
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
               Stay Safe Anywhere in the World
             </h1>
             <UserLocation />

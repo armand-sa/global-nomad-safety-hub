@@ -67,7 +67,7 @@ export default function CountryFlag({
 
   return (
     <div 
-      className={`relative overflow-hidden shadow-md border border-black/10 dark:border-white/5 ${className}`}
+      className={`relative overflow-hidden shadow-md border border-black/10 dark:border-white/5 rounded-sm ${className}`}
       style={{ 
         width, 
         height,
@@ -76,7 +76,12 @@ export default function CountryFlag({
     >
       {/* Loading indicator */}
       {isLoading && (
-        <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse" />
+          {size === "lg" || size === "xl" ? (
+            <span className="relative text-[8px] text-gray-500 dark:text-gray-400 font-medium z-10">Loading</span>
+          ) : null}
+        </div>
       )}
       
       {/* Primary flag image */}
