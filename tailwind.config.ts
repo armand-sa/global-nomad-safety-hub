@@ -14,6 +14,9 @@ const config: Config = {
         'gradient-conic':
           'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
+      transitionTimingFunction: {
+        'spring': 'cubic-bezier(0.5, 0.0, 0, 1.5)',
+      },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
@@ -78,10 +81,19 @@ const config: Config = {
             height: '0',
           },
         },
+        'spring-bounce': {
+          '0%, 100%': {
+            transform: 'translateY(0)',
+          },
+          '50%': {
+            transform: 'translateY(-10px)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'ease-spring': 'spring-bounce 1s cubic-bezier(0.5, 0.0, 0, 1.5) infinite',
       },
     },
   },

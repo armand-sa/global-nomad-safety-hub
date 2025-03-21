@@ -15,11 +15,7 @@ export default function Home() {
               Stay Safe Anywhere in the World
             </h1>
             <UserLocation />
-            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Get real-time safety insights for travelers and digital nomads. Explore safety scores, local tips, and 
-              emergency information for 200+ countries and cities.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
               <Button asChild size="lg" className="gap-2">
                 <Link href="/map">
                   <MapPin size={18} />
@@ -195,6 +191,10 @@ export default function Home() {
       <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
         <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
+              Get real-time safety insights for travelers and digital nomads. Explore safety scores, local tips, and 
+              emergency information for 200+ countries and cities.
+            </p>
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
                 Why Choose Our Platform
