@@ -16,6 +16,7 @@ const config: Config = {
       },
       transitionTimingFunction: {
         'spring': 'cubic-bezier(0.5, 0.0, 0, 1.5)',
+        'bounce-in': 'cubic-bezier(0.5, -0.5, 0.1, 1.5)',
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -36,6 +37,8 @@ const config: Config = {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
+          dark: 'hsl(var(--primary-dark))',
+          light: 'hsl(var(--primary-light))',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -89,11 +92,60 @@ const config: Config = {
             transform: 'translateY(-10px)',
           },
         },
+        'fade-in': {
+          '0%': {
+            opacity: '0',
+            transform: 'translateY(10px)',
+          },
+          '100%': {
+            opacity: '1',
+            transform: 'translateY(0)',
+          },
+        },
+        'float': {
+          '0%, 100%': {
+            transform: 'translateY(0)',
+          },
+          '50%': {
+            transform: 'translateY(-10px)',
+          },
+        },
+        'pulse': {
+          '0%, 100%': {
+            opacity: '1',
+          },
+          '50%': {
+            opacity: '0.5',
+          },
+        },
+        'ripple': {
+          '0%': {
+            transform: 'scale(0.8)',
+            opacity: '1',
+          },
+          '100%': {
+            transform: 'scale(2.4)',
+            opacity: '0',
+          },
+        },
+        'breathe': {
+          '0%, 100%': {
+            backdropFilter: 'blur(10px)',
+          },
+          '50%': {
+            backdropFilter: 'blur(15px)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'ease-spring': 'spring-bounce 1s cubic-bezier(0.5, 0.0, 0, 1.5) infinite',
+        'fade-in': 'fade-in 0.5s ease-out forwards',
+        'float': 'float 6s ease-in-out infinite',
+        'pulse': 'pulse 3s ease-in-out infinite',
+        'ripple': 'ripple 1.5s ease-out infinite',
+        'breathe': 'breathe 8s ease-in-out infinite',
       },
     },
   },

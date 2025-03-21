@@ -4,18 +4,33 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Globe, Shield, MapPin, Bell, PenTool, CreditCard } from "lucide-react";
 import UserLocation from "@/components/location/UserLocation";
 
+// Add a styled subtitle component 
+function Subtitle() {
+  return (
+    <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in" style={{animationDelay: "0.3s"}}>
+      Get real-time safety insights for travelers and digital nomads. Explore safety scores, local tips, and 
+      emergency information for 200+ countries and cities.
+    </p>
+  );
+}
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="py-12 md:py-20 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent px-4">
-        <div className="container mx-auto max-w-5xl">
+      <section className="py-12 md:py-20 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent px-4 relative overflow-hidden">
+        {/* Background elements */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-primary/5 rounded-full blur-3xl"></div>
+        
+        <div className="container mx-auto max-w-5xl relative z-10">
           <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 animate-fade-in">
               Stay Safe Anywhere in the World
             </h1>
+            <Subtitle />
             <UserLocation />
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-6 animate-fade-in" style={{animationDelay: "0.6s"}}>
               <Button asChild size="lg" className="gap-2">
                 <Link href="/map">
                   <MapPin size={18} />
@@ -69,8 +84,53 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Interactive Map Placeholder */}
+      {/* Features */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
+        <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
+          <div className="flex flex-col items-center justify-center space-y-4 text-center">
+            <div className="space-y-2">
+              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
+                Why Choose Our Platform
+              </h2>
+              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
+                Comprehensive safety tools designed specifically for the modern digital nomad lifestyle.
+              </p>
+            </div>
+            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8 mt-8">
+              {[
+                {
+                  title: "Global Coverage",
+                  description: "Safety data for over 190 countries and 10,000+ cities worldwide.",
+                  icon: <Globe className="h-10 w-10" />
+                },
+                {
+                  title: "Real-Time Alerts",
+                  description: "Instant notifications about safety incidents in your area of interest.",
+                  icon: <Bell className="h-10 w-10" />
+                },
+                {
+                  title: "Expert Insights",
+                  description: "Safety guides written by security professionals and experienced travelers.",
+                  icon: <Shield className="h-10 w-10" />
+                }
+              ].map((feature) => (
+                <Card key={feature.title} className="flex flex-col items-center text-center backdrop-blur-sm bg-background/50 border border-white/10 dark:border-white/5 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                  <CardHeader>
+                    <div className="mb-4 text-primary">{feature.icon}</div>
+                    <CardTitle>{feature.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Interactive Map Placeholder */}
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
         <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-10">
             <div className="space-y-2">
@@ -82,9 +142,9 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="mx-auto max-w-5xl border rounded-lg overflow-hidden">
-            <div className="aspect-[16/9] bg-muted flex items-center justify-center">
-              <MapPin className="h-16 w-16 text-muted-foreground" />
+          <div className="mx-auto max-w-5xl rounded-xl overflow-hidden shadow-lg bg-background/50 backdrop-blur-sm border border-white/10 dark:border-white/5">
+            <div className="aspect-[16/9] bg-muted/50 flex items-center justify-center">
+              <MapPin className="h-16 w-16 text-primary/70" />
               <span className="sr-only">Map placeholder</span>
             </div>
           </div>
@@ -97,7 +157,7 @@ export default function Home() {
       </section>
 
       {/* Blog Preview Section */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
         <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-10">
             <div className="space-y-2">
@@ -133,7 +193,7 @@ export default function Home() {
                 slug: "travel-insurance-digital-nomads"
               }
             ].map((post) => (
-              <Card key={post.title} className="flex flex-col">
+              <Card key={post.title} className="flex flex-col backdrop-blur-sm bg-background/70 border border-white/10 dark:border-white/5 shadow-md">
                 <CardHeader>
                   <CardTitle>{post.title}</CardTitle>
                   <CardDescription>{post.date} • {post.author}</CardDescription>
@@ -158,8 +218,12 @@ export default function Home() {
       </section>
 
       {/* Subscription CTA */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-primary text-primary-foreground">
-        <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
+      <section className="w-full py-12 md:py-24 lg:py-32 bg-primary text-primary-foreground relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-dark to-primary pointer-events-none opacity-70"></div>
+        <div className="absolute -top-24 -right-24 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+        
+        <div className="container max-w-screen-xl mx-auto px-4 md:px-6 relative z-10">
           <div className="flex flex-col items-center justify-center space-y-4 text-center">
             <div className="space-y-2">
               <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
@@ -182,55 +246,6 @@ export default function Home() {
               <p className="text-xs text-primary-foreground/80">
                 We respect your privacy. Unsubscribe at any time.
               </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
-        <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
-          <div className="flex flex-col items-center justify-center space-y-4 text-center">
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
-              Get real-time safety insights for travelers and digital nomads. Explore safety scores, local tips, and 
-              emergency information for 200+ countries and cities.
-            </p>
-            <div className="space-y-2">
-              <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">
-                Why Choose Our Platform
-              </h2>
-              <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                Comprehensive safety tools designed specifically for the modern digital nomad lifestyle.
-              </p>
-            </div>
-            <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
-              {[
-                {
-                  title: "Global Coverage",
-                  description: "Safety data for over 190 countries and 10,000+ cities worldwide.",
-                  icon: <Globe className="h-10 w-10" />
-                },
-                {
-                  title: "Real-Time Alerts",
-                  description: "Instant notifications about safety incidents in your area of interest.",
-                  icon: <Bell className="h-10 w-10" />
-                },
-                {
-                  title: "Expert Insights",
-                  description: "Safety guides written by security professionals and experienced travelers.",
-                  icon: <Shield className="h-10 w-10" />
-                }
-              ].map((feature) => (
-                <Card key={feature.title} className="flex flex-col items-center text-center">
-                  <CardHeader>
-                    <div className="mb-4">{feature.icon}</div>
-                    <CardTitle>{feature.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">{feature.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
             </div>
           </div>
         </div>

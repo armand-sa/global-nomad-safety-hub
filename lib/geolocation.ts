@@ -64,6 +64,7 @@ export type LocationSearchResult = {
 const LOCATION_CACHE_KEY = 'gnsh_location_cache';
 const LOCATION_CACHE_EXPIRY = 15 * 60 * 1000; // 15 minutes in milliseconds
 const MAX_ACCEPTABLE_ACCURACY = 500; // Maximum acceptable accuracy in meters
+const MOBILE_TIMEOUT = 8000; // 8 seconds timeout for mobile devices
 
 /**
  * Gets the user's current position using the Geolocation API with enhanced accuracy
@@ -73,13 +74,40 @@ export const getCurrentPosition = async (): Promise<GeolocationResult> => {
     throw new Error("Geolocation is not supported by this browser");
   }
 
+  // Check if user is on mobile device
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    typeof navigator !== 'undefined' ? navigator.userAgent : ''
+  );
+  
+  // Use shorter timeouts for mobile devices
+  const timeoutDuration = isMobile ? MOBILE_TIMEOUT : 15000;
+  
+  // First check if we have a valid cached position
+  const cachedData = getCachedLocationData();
+  if (cachedData && cachedData.accuracy <= MAX_ACCEPTABLE_ACCURACY) {
+    // If cached data is acceptable, return it quickly (especially important for mobile)
+    console.log("Using cached position data for faster startup");
+    return {
+      coords: {
+        latitude: cachedData.latitude,
+        longitude: cachedData.longitude,
+        accuracy: cachedData.accuracy,
+        heading: null,
+        speed: null,
+        altitude: null,
+        altitudeAccuracy: null,
+      },
+      timestamp: Date.now(),
+    };
+  }
+
   // Try to get the most accurate position possible with multiple attempts
   try {
     // First attempt: High accuracy mode with no cached positions
     const position = await getPositionWithOptions({
       enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
+      timeout: timeoutDuration,
+      maximumAge: isMobile ? 60000 : 0 // On mobile, allow 1 minute cached positions for faster load
     });
     
     // Check if accuracy is acceptable
@@ -90,7 +118,7 @@ export const getCurrentPosition = async (): Promise<GeolocationResult> => {
         // Try again with extended timeout for higher accuracy
         const precisePosition = await getPositionWithOptions({
           enableHighAccuracy: true,
-          timeout: 20000,
+          timeout: isMobile ? timeoutDuration + 2000 : 20000,
           maximumAge: 0
         });
         
@@ -112,25 +140,31 @@ export const getCurrentPosition = async (): Promise<GeolocationResult> => {
       try {
         return await getPositionWithOptions({
           enableHighAccuracy: true,
-          timeout: 20000, // Longer timeout
+          timeout: isMobile ? timeoutDuration + 3000 : 20000, // Slightly longer timeout
           maximumAge: 0
         });
       } catch (secondError: any) {
         // If that still times out, try with lower accuracy
         if (secondError.code === 3) { // TIMEOUT
           console.log("Extended high accuracy timed out, falling back to lower accuracy...");
-          const position = await getPositionWithOptions({
-            enableHighAccuracy: false,
-            timeout: 10000,
-            maximumAge: 30000 // Allow cached positions up to 30 seconds old
-          });
-          
-          // Check if even low accuracy position meets our requirements
-          if (position.coords.accuracy > MAX_ACCEPTABLE_ACCURACY) {
-            throw new Error(`Location accuracy of ${Math.round(position.coords.accuracy)}m exceeds maximum acceptable (${MAX_ACCEPTABLE_ACCURACY}m). Please try again in a better location with clearer GPS signal.`);
+          try {
+            const position = await getPositionWithOptions({
+              enableHighAccuracy: false,
+              timeout: isMobile ? timeoutDuration : 10000,
+              maximumAge: 60000 // Allow cached positions up to 60 seconds old
+            });
+            
+            // Check if even low accuracy position meets our requirements
+            if (position.coords.accuracy > MAX_ACCEPTABLE_ACCURACY) {
+              throw new Error(`Location accuracy of ${Math.round(position.coords.accuracy)}m exceeds maximum acceptable (${MAX_ACCEPTABLE_ACCURACY}m). Please try again in a better location with clearer GPS signal.`);
+            }
+            
+            return position;
+          } catch (thirdError) {
+            // Last resort: Try IP-based geolocation if all else fails
+            console.log("All GPS attempts failed, trying IP-based fallback...");
+            throw new Error("Location access timed out. Your device may be having GPS issues or you may be in an area with poor reception.");
           }
-          
-          return position;
         }
         throw secondError;
       }

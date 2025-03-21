@@ -106,6 +106,17 @@ const animationKeyframes = `
     transform: translateY(0px);
   }
 }
+
+@keyframes breathe {
+  0%, 100% {
+    backdrop-filter: blur(10px);
+    background-opacity: 0.8;
+  }
+  50% {
+    backdrop-filter: blur(12px);
+    background-opacity: 0.9;
+  }
+}
 `;
 
 export default function UserLocation() {
@@ -279,19 +290,19 @@ export default function UserLocation() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center w-full bg-background/80 backdrop-blur-sm rounded-xl py-8 px-6 mt-4 mb-2 border border-border shadow-lg">
+      <div className="flex flex-col items-center justify-center w-full bg-background/30 backdrop-blur-md rounded-xl py-8 px-6 mt-4 mb-2 border border-border/40 shadow-lg dark:bg-black/20 dark:border-white/10 dark:shadow-2xl">
         <div className="relative mb-3">
           <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-75" style={{animationDuration: "1.5s"}}></div>
-          {loadingStage === 'initial' && <Globe className="h-12 w-12 text-primary/80 relative animate-pulse" />}
+          {loadingStage === 'initial' && <Globe className="h-12 w-12 text-primary relative animate-pulse" />}
           {loadingStage === 'gps' && (
             <div className="relative">
-              <MapPin className="h-12 w-12 text-primary/80 relative animate-bounce" />
+              <MapPin className="h-12 w-12 text-primary relative animate-bounce" />
               <div className="absolute inset-0 bg-primary/10 rounded-full animate-ripple" style={{animationDuration: "2s", animationIterationCount: "infinite"}}></div>
             </div>
           )}
           {loadingStage === 'geocoding' && (
             <div className="relative">
-              <Loader2 className="h-12 w-12 text-primary/80 relative animate-spin" />
+              <Loader2 className="h-12 w-12 text-primary relative animate-spin" />
               <div className="absolute inset-[-2px] border-2 border-primary/20 rounded-full"></div>
             </div>
           )}
@@ -306,7 +317,7 @@ export default function UserLocation() {
           {loadingStage === 'gps' && "Accessing GPS for precise coordinates"}
           {loadingStage === 'geocoding' && "Converting coordinates to a readable location"}
         </p>
-        <div className="w-72 h-2.5 bg-muted rounded-full overflow-hidden">
+        <div className="w-72 h-2.5 bg-muted/40 backdrop-blur-sm rounded-full overflow-hidden">
           <div 
             className="h-full bg-primary rounded-full transition-all duration-700 ease-out"
             style={{ 
@@ -323,63 +334,72 @@ export default function UserLocation() {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center w-full bg-background/80 backdrop-blur-sm rounded-xl py-8 px-6 mt-4 mb-4 border border-destructive/30 shadow-lg">
-        <div className="relative text-destructive mb-3">
-          <AlertTriangle className="h-12 w-12 stroke-[1.5]" />
-          <div className="absolute inset-0 bg-destructive/10 rounded-full animate-pulse opacity-70" style={{animationDuration: "2s"}}></div>
-        </div>
+      <div className="flex flex-col items-center justify-center w-full rounded-xl py-8 px-6 mt-4 mb-4 
+                    bg-background/60 backdrop-blur-lg border border-white/10 dark:border-white/5
+                    relative overflow-hidden transition-all duration-300 ease-out shadow-xl">
+        {/* Glassmorphism background effects */}
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "8s"}}></div>
+        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "10s", animationDelay: "1s"}}></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-background/70 via-background/50 to-background/70 pointer-events-none"></div>
         
-        {accuracyError ? (
-          <>
-            <span className="text-xl font-semibold mb-2 text-center">Location Not Accurate Enough</span>
-            <p className="text-md text-center text-muted-foreground mb-5 max-w-[320px]">
-              We require precise location (within 500m) to provide accurate safety data. Your current location accuracy doesn't meet this requirement.
-            </p>
-            <div className="flex flex-col space-y-3 mb-4 w-full max-w-[320px]">
-              <div className="flex items-start space-x-2 text-sm">
-                <div className="bg-destructive/10 p-1 rounded-full mt-0.5">
-                  <Navigation className="h-4 w-4 text-destructive" />
+        <div className="relative z-10">
+          <div className="relative mb-4 flex justify-center">
+            <AlertTriangle className="h-16 w-16 stroke-[1.5] text-primary" />
+            <div className="absolute inset-0 bg-primary/10 rounded-full animate-pulse opacity-70" style={{animationDuration: "2s"}}></div>
+          </div>
+          
+          {accuracyError ? (
+            <>
+              <span className="text-xl font-semibold mb-2 text-center">Location Not Accurate Enough</span>
+              <p className="text-md text-center text-muted-foreground mb-5 max-w-[320px]">
+                We require precise location (within 500m) to provide accurate safety data. Your current location accuracy doesn't meet this requirement.
+              </p>
+              <div className="flex flex-col space-y-3 mb-4 w-full max-w-[320px]">
+                <div className="flex items-start space-x-2 text-sm">
+                  <div className="bg-primary/10 p-1 rounded-full mt-0.5">
+                    <Navigation className="h-4 w-4 text-primary" />
+                  </div>
+                  <span>Move to an area with better GPS reception</span>
                 </div>
-                <span>Move to an area with better GPS reception</span>
-              </div>
-              <div className="flex items-start space-x-2 text-sm">
-                <div className="bg-destructive/10 p-1 rounded-full mt-0.5">
-                  <MapPin className="h-4 w-4 text-destructive" />
+                <div className="flex items-start space-x-2 text-sm">
+                  <div className="bg-primary/10 p-1 rounded-full mt-0.5">
+                    <MapPin className="h-4 w-4 text-primary" />
+                  </div>
+                  <span>Make sure your device's location services are set to high accuracy</span>
                 </div>
-                <span>Make sure your device's location services are set to high accuracy</span>
-              </div>
-              <div className="flex items-start space-x-2 text-sm">
-                <div className="bg-destructive/10 p-1 rounded-full mt-0.5">
-                  <Search className="h-4 w-4 text-destructive" />
+                <div className="flex items-start space-x-2 text-sm">
+                  <div className="bg-primary/10 p-1 rounded-full mt-0.5">
+                    <Search className="h-4 w-4 text-primary" />
+                  </div>
+                  <span>Try searching for your location manually instead</span>
                 </div>
-                <span>Try searching for your location manually instead</span>
               </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <span className="text-xl font-semibold mb-2">Location access required</span>
-            <p className="text-md text-center text-muted-foreground mb-5 max-w-[320px]">
-              Please allow location access to see safety data for your area and get personalized alerts
-            </p>
-          </>
-        )}
-        
-        <div className="flex flex-col sm:flex-row gap-3 w-full mt-1 max-w-[320px]">
-          <button 
-            onClick={handleRetry}
-            className="flex-1 font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:translate-y-[-2px]"
-          >
-            <MapPin className="h-5 w-5" />
-            {accuracyError ? "Try Again" : "Enable Location"}
-          </button>
-          <button 
-            onClick={handleEnterManually}
-            className="flex-1 font-medium bg-muted hover:bg-muted/90 px-5 py-3 rounded-lg transition-all border border-border flex items-center justify-center gap-2 shadow-sm hover:shadow transform hover:translate-y-[-2px]"
-          >
-            <Search className="h-5 w-5" />
-            Enter Manually
-          </button>
+            </>
+          ) : (
+            <>
+              <span className="text-xl font-semibold mb-2 text-center">Location Access Required</span>
+              <p className="text-md text-center text-muted-foreground mb-5 max-w-[320px]">
+                Please allow location access to see safety data for your area and get personalized alerts
+              </p>
+            </>
+          )}
+          
+          <div className="flex flex-col sm:flex-row gap-3 w-full mt-4 max-w-[320px]">
+            <button 
+              onClick={handleRetry}
+              className="flex-1 font-medium bg-primary hover:bg-primary/90 text-primary-foreground px-5 py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-[2px] active:translate-y-[1px]"
+            >
+              <MapPin className="h-5 w-5" />
+              {accuracyError ? "Try Again" : "Enable Location"}
+            </button>
+            <button 
+              onClick={handleEnterManually}
+              className="flex-1 font-medium bg-background/80 hover:bg-background/60 text-foreground border border-border/50 backdrop-blur-sm px-5 py-3 rounded-lg transition-all flex items-center justify-center gap-2 shadow-sm hover:shadow transform hover:-translate-y-[2px] active:translate-y-[1px]"
+            >
+              <Search className="h-5 w-5" />
+              Enter Manually
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -408,16 +428,19 @@ export default function UserLocation() {
   return (
     <div 
       className={cn(
-        "relative w-full backdrop-blur-md rounded-xl py-8 px-5 mt-6 mb-6",
-        "overflow-hidden transition-all duration-500 ease-in-out border shadow-lg",
-        "bg-gradient-to-b from-background via-background to-background/90",
+        "relative w-full rounded-xl py-8 px-5 mt-6 mb-6",
+        "overflow-hidden transition-all duration-500 ease-in-out shadow-lg",
+        "bg-background/70 backdrop-blur-xl border border-white/10 dark:border-white/5",
         showLocation ? 'opacity-100 transform-none' : 'opacity-0 translate-y-4',
-        isPrecise ? 'border-primary/40' : 'border-border',
+        isPrecise ? 'border-primary/20' : 'border-border/50',
         highPrecision ? 'shadow-xl' : 'shadow-md'
       )}
     >
-      {/* Background effects - Animated gradient */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 via-transparent to-primary/5 opacity-80 pointer-events-none"></div>
+      {/* Glassmorphism background effects */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-background/20 to-background/40 pointer-events-none"></div>
+      <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "8s"}}></div>
+      <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none animate-pulse" style={{animationDuration: "10s", animationDelay: "1s"}}></div>
+      
       {isPrecise && (
         <div className="absolute inset-0 bg-primary/5 opacity-50 pointer-events-none"></div>
       )}
@@ -430,7 +453,7 @@ export default function UserLocation() {
         >
           <img 
             src={mapImageUrl} 
-            alt="Location map"
+            alt=""
             className="object-cover w-full h-full"
             loading="lazy"
           />
@@ -452,8 +475,8 @@ export default function UserLocation() {
           {/* Country flag with animation */}
           <div 
             className={cn(
-              "mb-4 p-1 rounded-xl overflow-hidden",
-              isPrecise ? "ring-2 ring-primary/20 shadow-md" : "",
+              "mb-4 overflow-hidden",
+              isPrecise ? "shadow-md" : "",
               highPrecision ? "animate-float" : ""
             )}
             style={{
@@ -550,7 +573,7 @@ export default function UserLocation() {
             <button 
               onClick={handleEnterManually}
               className="text-xs sm:text-sm flex items-center justify-center gap-1.5 text-foreground hover:text-foreground/90 transition-all
-                       bg-muted hover:bg-muted/90 px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:scale-105"
+                       bg-background hover:bg-background/80 border border-border/50 backdrop-blur-sm px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:scale-105"
               aria-label="Enter location manually"
             >
               <Search className="h-4 w-4" /> 
@@ -561,7 +584,7 @@ export default function UserLocation() {
             <button 
               onClick={() => window.location.href = '/map'}
               className="text-xs sm:text-sm flex items-center justify-center gap-1.5 text-foreground/80 hover:text-foreground/100 transition-all
-                       bg-background border border-border hover:border-primary/30 px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:scale-105"
+                       bg-background/50 border border-border/30 backdrop-blur-sm hover:border-primary/30 px-3.5 py-2 rounded-lg shadow-sm hover:shadow transform hover:scale-105"
               aria-label="View on map"
             >
               <MapIcon className="h-4 w-4" /> 
@@ -572,7 +595,8 @@ export default function UserLocation() {
           {/* Safety indicator */}
           {highPrecision && (
             <div 
-              className="mt-5 w-full max-w-[320px] bg-background/50 backdrop-blur-sm rounded-lg border border-border shadow-sm p-3 flex items-center gap-3"
+              className="mt-5 w-full max-w-[320px] backdrop-blur-sm rounded-lg border border-white/5 dark:border-white/5 shadow-sm p-3 flex items-center gap-3
+                       bg-gradient-to-r from-green-500/10 via-green-500/5 to-green-500/10"
               style={{
                 animation: showLocation ? 'fade-in-up 0.9s ease-out' : 'none',
                 animationDelay: '0.7s',
@@ -590,10 +614,6 @@ export default function UserLocation() {
           )}
         </div>
       </div>
-      
-      {/* Decorative elements */}
-      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute -top-10 -left-10 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
     </div>
   );
 } 

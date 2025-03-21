@@ -157,7 +157,7 @@ export default function CountryFlag({
   if (!normalizedCode) {
     return (
       <div className={cn(
-        "flex items-center justify-center bg-muted rounded-md",
+        "flex items-center justify-center bg-muted",
         getSizeClass(size).container,
         className
       )}>
@@ -170,9 +170,9 @@ export default function CountryFlag({
   if (normalizedCode in REGION_FLAGS) {
     return (
       <div className={cn(
-        "flex items-center justify-center rounded-md",
+        "flex items-center justify-center",
         getSizeClass(size).container,
-        showBorder && "ring-1 ring-border",
+        showBorder && "border border-border",
         className
       )}>
         <span className={cn("leading-none", getSizeClass(size).emoji)}>{REGION_FLAGS[normalizedCode]}</span>
@@ -186,9 +186,9 @@ export default function CountryFlag({
   return (
     <div 
       className={cn(
-        "relative overflow-hidden rounded-md bg-background",
+        "relative overflow-hidden bg-background",
         getSizeClass(size).container,
-        showBorder && "ring-1 ring-border",
+        showBorder && "border border-border",
         className
       )}
     >
@@ -216,6 +216,7 @@ export default function CountryFlag({
             // Ensure proper aspect ratio and no blue highlighting
             aspectRatio: "4/3",
             backgroundColor: "transparent",
+            borderRadius: 0 // Ensure no rounded corners on the flag
           }}
         />
       )}
