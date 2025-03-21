@@ -25,6 +25,9 @@ export default function LoginPage() {
   const isAuthFlow = searchParams.get("auth") === "true"; // Check if this is direct auth flow
   const logoutMessage = searchParams.get("message");
   
+  // Check if the redirect is to admin page
+  const isAdminRedirect = redirectTo.includes("/admin");
+  
   // State for site password verification
   const [isVerified, setIsVerified] = useState(isAuthFlow); // Skip password check if auth=true
   const [isCheckingVerification, setIsCheckingVerification] = useState(!isAuthFlow);
@@ -266,13 +269,20 @@ export default function LoginPage() {
     <div className="container max-w-screen-xl mx-auto px-4 flex h-screen w-screen flex-col items-center justify-center">
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[400px]">
         <div className="flex flex-col space-y-2 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight">Welcome to Global Nomad Safety</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Welcome to Global Nomad Safety
+            {isAdminRedirect && isVerified && (
+              <span className="block text-xl text-primary mt-1">Admin Portal Access</span>
+            )}
+          </h1>
           <p className="text-sm text-muted-foreground">
             {!isVerified 
               ? "This site is password protected during development" 
               : activeTab === "login" 
-                ? "Sign in to access your account" 
-                : "Create an account to get started"
+                ? isAdminRedirect 
+                  ? <strong>Sign in to access your admin account</strong>
+                  : <strong>Sign in to access your account</strong>
+                : <strong>Create an account to get started</strong>
             }
           </p>
         </div>
@@ -363,16 +373,20 @@ export default function LoginPage() {
             )}
 
             <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 mb-4 p-1">
+                <TabsTrigger value="login" className="text-base font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Login
+                </TabsTrigger>
+                <TabsTrigger value="register" className="text-base font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Register
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="login">
-                <Card>
+                <Card className="border-2">
                   <form onSubmit={handleLogin}>
                     <CardHeader>
-                      <CardTitle>Login</CardTitle>
+                      <CardTitle className="text-xl">Login to Your Account</CardTitle>
                       <CardDescription>
                         Enter your email and password to log in to your account.
                       </CardDescription>
@@ -434,22 +448,24 @@ export default function LoginPage() {
                           variant="outline" 
                           onClick={() => handleOAuthLogin('google')}
                           disabled={isLoading || !networkStatus}
-                          className="flex items-center justify-center gap-2"
+                          className="flex items-center justify-center gap-2 border-2 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-slate-50 transition-colors"
                         >
-                          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" width="18" height="18" alt="Google logo" />
-                          Google
+                          <svg viewBox="0 0 24 24" width="20" height="20" className="text-red-500">
+                            <path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
+                          </svg>
+                          <span className="font-medium">Google</span>
                         </Button>
                         <Button 
                           type="button" 
                           variant="outline" 
                           onClick={() => handleOAuthLogin('apple')}
                           disabled={isLoading || !networkStatus}
-                          className="flex items-center justify-center gap-2"
+                          className="flex items-center justify-center gap-2 border-2 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
                         >
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14.94 5.19A4.45 4.45 0 0 0 16 2a4.93 4.93 0 0 0-3.24 1.67 4.55 4.55 0 0 0-1.14 3.24 4.1 4.1 0 0 0 3.32-1.72zM18.38 14.06c0-2.37 1.94-3.5 2-3.56-1.09-1.6-2.79-1.81-3.39-1.83-1.43-.15-2.83.85-3.56.85-.74 0-1.86-.84-3.07-.82a4.57 4.57 0 0 0-3.85 2.34c-1.65 2.87-.42 7.1 1.19 9.42.79 1.14 1.72 2.42 2.95 2.37 1.19-.05 1.64-.76 3.08-.76 1.43 0 1.84.76 3.09.74 1.28-.02 2.09-1.16 2.87-2.3a9.76 9.76 0 0 0 1.3-2.67 4.21 4.21 0 0 1-2.6-3.78z"></path>
+                          <svg viewBox="0 0 24 24" width="20" height="20" className="text-slate-900 dark:text-white">
+                            <path fill="currentColor" d="M14.94 5.19A4.45 4.45 0 0 0 16 2a4.93 4.93 0 0 0-3.24 1.67 4.55 4.55 0 0 0-1.14 3.24 4.1 4.1 0 0 0 3.32-1.72zM18.38 14.06c0-2.37 1.94-3.5 2-3.56-1.09-1.6-2.79-1.81-3.39-1.83-1.43-.15-2.83.85-3.56.85-.74 0-1.86-.84-3.07-.82a4.57 4.57 0 0 0-3.85 2.34c-1.65 2.87-.42 7.1 1.19 9.42.79 1.14 1.72 2.42 2.95 2.37 1.19-.05 1.64-.76 3.08-.76 1.43 0 1.84.76 3.09.74 1.28-.02 2.09-1.16 2.87-2.3a9.76 9.76 0 0 0 1.3-2.67 4.21 4.21 0 0 1-2.6-3.78z"></path>
                           </svg>
-                          Apple
+                          <span className="font-medium">Apple</span>
                         </Button>
                       </div>
                     </CardContent>
@@ -464,10 +480,10 @@ export default function LoginPage() {
               </TabsContent>
               
               <TabsContent value="register">
-                <Card>
+                <Card className="border-2">
                   <form onSubmit={handleSignUp}>
                     <CardHeader>
-                      <CardTitle>Create an account</CardTitle>
+                      <CardTitle className="text-xl">Create an Account</CardTitle>
                       <CardDescription>
                         Enter your information to create a new account.
                       </CardDescription>
@@ -534,22 +550,24 @@ export default function LoginPage() {
                           variant="outline" 
                           onClick={() => handleOAuthLogin('google')}
                           disabled={isLoading || !networkStatus}
-                          className="flex items-center justify-center gap-2"
+                          className="flex items-center justify-center gap-2 border-2 hover:bg-slate-50 hover:text-slate-900 dark:hover:bg-slate-900 dark:hover:text-slate-50 transition-colors"
                         >
-                          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" width="18" height="18" alt="Google logo" />
-                          Google
+                          <svg viewBox="0 0 24 24" width="20" height="20" className="text-red-500">
+                            <path fill="currentColor" d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"/>
+                          </svg>
+                          <span className="font-medium">Google</span>
                         </Button>
                         <Button 
                           type="button" 
                           variant="outline" 
                           onClick={() => handleOAuthLogin('apple')}
                           disabled={isLoading || !networkStatus}
-                          className="flex items-center justify-center gap-2"
+                          className="flex items-center justify-center gap-2 border-2 hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
                         >
-                          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M14.94 5.19A4.45 4.45 0 0 0 16 2a4.93 4.93 0 0 0-3.24 1.67 4.55 4.55 0 0 0-1.14 3.24 4.1 4.1 0 0 0 3.32-1.72zM18.38 14.06c0-2.37 1.94-3.5 2-3.56-1.09-1.6-2.79-1.81-3.39-1.83-1.43-.15-2.83.85-3.56.85-.74 0-1.86-.84-3.07-.82a4.57 4.57 0 0 0-3.85 2.34c-1.65 2.87-.42 7.1 1.19 9.42.79 1.14 1.72 2.42 2.95 2.37 1.19-.05 1.64-.76 3.08-.76 1.43 0 1.84.76 3.09.74 1.28-.02 2.09-1.16 2.87-2.3a9.76 9.76 0 0 0 1.3-2.67 4.21 4.21 0 0 1-2.6-3.78z"></path>
+                          <svg viewBox="0 0 24 24" width="20" height="20" className="text-slate-900 dark:text-white">
+                            <path fill="currentColor" d="M14.94 5.19A4.45 4.45 0 0 0 16 2a4.93 4.93 0 0 0-3.24 1.67 4.55 4.55 0 0 0-1.14 3.24 4.1 4.1 0 0 0 3.32-1.72zM18.38 14.06c0-2.37 1.94-3.5 2-3.56-1.09-1.6-2.79-1.81-3.39-1.83-1.43-.15-2.83.85-3.56.85-.74 0-1.86-.84-3.07-.82a4.57 4.57 0 0 0-3.85 2.34c-1.65 2.87-.42 7.1 1.19 9.42.79 1.14 1.72 2.42 2.95 2.37 1.19-.05 1.64-.76 3.08-.76 1.43 0 1.84.76 3.09.74 1.28-.02 2.09-1.16 2.87-2.3a9.76 9.76 0 0 0 1.3-2.67 4.21 4.21 0 0 1-2.6-3.78z"></path>
                           </svg>
-                          Apple
+                          <span className="font-medium">Apple</span>
                         </Button>
                       </div>
                     </CardContent>
