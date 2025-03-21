@@ -161,8 +161,8 @@ export default function LoginPage() {
         return;
       }
 
-      // If password is correct, update our state
-      setIsVerified(true);
+      // Password is correct, refresh the page to apply cookie
+      window.location.reload();
     } catch (error) {
       setSitePasswordError("Failed to verify password. Please try again.");
     }

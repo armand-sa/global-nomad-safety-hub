@@ -6,7 +6,7 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
   
-  // 1. SKIP CHECKS FOR PUBLIC RESOURCES
+  // 1. SKIP CHECKS FOR PUBLIC RESOURCES AND API ROUTES
   // Don't check passwords or auth for static files, images, and API routes
   if (
     req.nextUrl.pathname.startsWith('/_next') ||
@@ -26,7 +26,14 @@ export async function middleware(req: NextRequest) {
     const hasPassword = req.cookies.get('site-password');
     const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
 
+    // Add debugging headers (these are safe to expose in dev)
+    if (process.env.NODE_ENV !== 'production') {
+      res.headers.set('X-Debug-Has-Password', hasPassword ? 'true' : 'false');
+      res.headers.set('X-Debug-Has-Correct-Env', correctPassword ? 'true' : 'false');
+    }
+
     if (!hasPassword || hasPassword.value !== correctPassword) {
+      // Redirect to login page with intended destination
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
       return NextResponse.redirect(loginUrl);
