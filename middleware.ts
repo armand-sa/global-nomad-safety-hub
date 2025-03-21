@@ -2,63 +2,62 @@ import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// This runs before page loads and checks for password
 export async function middleware(req: NextRequest) {
+  console.log('Middleware running for path:', req.nextUrl.pathname);
+  
+  // Create a default response (will be returned if checks pass)
   const res = NextResponse.next();
+  
+  // Initialize Supabase client for auth
   const supabase = createMiddlewareClient({ req, res });
   
-  // 1. SKIP CHECKS FOR PUBLIC RESOURCES AND API ROUTES
-  // Don't check passwords or auth for static files, images, and API routes
+  // 1. ALLOW THESE PATHS WITHOUT PASSWORD
+  // Skip checks for assets, API routes, and the login page itself
   if (
     req.nextUrl.pathname.startsWith('/_next') ||
     req.nextUrl.pathname.startsWith('/api') ||
-    req.nextUrl.pathname.includes('favicon.ico') ||
+    req.nextUrl.pathname === '/login' || 
+    req.nextUrl.pathname === '/favicon.ico' ||
     req.nextUrl.pathname.includes('.svg') ||
     req.nextUrl.pathname.includes('.png') ||
     req.nextUrl.pathname.includes('.jpg') ||
     req.nextUrl.pathname.includes('.jpeg') ||
     req.nextUrl.pathname.includes('.ico')
   ) {
+    console.log('Skipping password check for:', req.nextUrl.pathname);
     return res;
   }
 
-  // 2. SUPABASE SESSION CHECK
-  // Keep the user's login session active
-  const { data: { session } } = await supabase.auth.getSession();
+  // 2. CHECK FOR SITE PASSWORD
+  // Get site password from cookies and env var
+  const sitePasswordCookie = req.cookies.get('site-password');
+  const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
   
-  // 3. SITE PASSWORD PROTECTION
-  // Check the site password (except for login page)
-  if (!req.nextUrl.pathname.startsWith('/login')) {
-    // Get the site password from the cookie
-    const sitePasswordCookie = req.cookies.get('site-password');
-    const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
+  // Log info for debugging (safe info only)
+  console.log('Password check:', {
+    path: req.nextUrl.pathname,
+    hasCookie: !!sitePasswordCookie,
+    hasEnvPassword: !!correctPassword,
+  });
+  
+  // If no cookie or wrong password, redirect to login
+  if (!sitePasswordCookie || sitePasswordCookie.value !== correctPassword) {
+    console.log('No valid password cookie, redirecting to login');
     
-    // Add debugging data to response headers (only in development)
-    const debugHeaders = new Headers(res.headers);
-    debugHeaders.set('x-debug-has-cookie', sitePasswordCookie ? 'yes' : 'no');
-    debugHeaders.set('x-debug-has-password-env', correctPassword ? 'yes' : 'no');
-
-    // Check if the password cookie exists and matches the correct password
-    if (!sitePasswordCookie || sitePasswordCookie.value !== correctPassword) {
-      console.log('Password protection: redirecting to login page');
-      // Password is missing or incorrect, redirect to login page
-      const url = new URL('/login', req.url);
-      
-      // Add the current URL as a redirect destination
-      if (req.nextUrl.pathname !== '/') {
-        url.searchParams.set('redirectTo', req.nextUrl.pathname);
-      }
-      
-      // Create a new response with the modified headers
-      const redirectRes = NextResponse.redirect(url);
-      
-      // Copy debug headers to the redirect response
-      for (const [key, value] of debugHeaders.entries()) {
-        redirectRes.headers.set(key, value);
-      }
-      
-      return redirectRes;
+    // Create redirect URL to login page
+    const url = new URL('/login', req.url);
+    
+    // Remember where user was trying to go
+    if (req.nextUrl.pathname !== '/') {
+      url.searchParams.set('redirectTo', req.nextUrl.pathname);
     }
+    
+    return NextResponse.redirect(url);
   }
+  
+  // 3. SUPABASE SESSION CHECK (only runs if password check passed)
+  const { data: { session } } = await supabase.auth.getSession();
 
   // 4. ADMIN ROUTE PROTECTION
   // Extra security for admin pages
@@ -71,7 +70,7 @@ export async function middleware(req: NextRequest) {
     }
     
     // Check if user has admin rights
-    const isAdmin = session.user.app_metadata?.role === 'admin';
+    const isAdmin = session?.user?.app_metadata?.role === 'admin';
     
     if (!isAdmin) {
       // Send non-admin users to homepage
@@ -79,20 +78,14 @@ export async function middleware(req: NextRequest) {
     }
   }
   
+  // All checks passed, continue to the requested page
   return res;
 }
 
-// Apply middleware to all routes
+// Apply middleware to all routes (with better pattern)
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images (files in the public/images directory)
-     * - api/verify-password (password verification API)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|images|public).*)',
+    // Match all paths but exclude static files
+    '/((?!_next/static|_next/image).*)',
   ],
 };

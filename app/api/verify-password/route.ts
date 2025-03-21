@@ -9,10 +9,11 @@ export async function GET() {
     const passwordCookie = cookies().get('site-password');
     const correctPassword = process.env.NEXT_PUBLIC_SITE_PASSWORD;
     
-    // Add console logging to help diagnose issues (will appear in server logs)
-    console.log('Checking site password cookie:', {
+    // For testing - print debug info to server logs
+    console.log('GET /api/verify-password - Checking cookie:', {
       hasCookie: !!passwordCookie,
-      hasEnvVar: !!correctPassword
+      hasPassword: !!correctPassword,
+      cookieValue: passwordCookie?.value?.substring(0, 3) + '***', // Only log first 3 chars for safety
     });
     
     if (passwordCookie && passwordCookie.value === correctPassword) {
@@ -21,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ verified: false }, { status: 401 });
     }
   } catch (error) {
-    console.error('Password verification check error:', error);
+    console.error('Password check error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }
@@ -32,47 +33,40 @@ export async function POST(request: Request) {
     const data = await request.formData();
     const password = data.get('password');
     
-    console.log('Password verification attempt:', { 
-      passwordProvided: !!password,
-      correctPasswordExists: !!process.env.NEXT_PUBLIC_SITE_PASSWORD 
+    // For testing - print debug info to server logs (but not the actual password!)
+    console.log('POST /api/verify-password - Password submitted:', { 
+      hasPassword: !!password,
+      passwordLength: password ? String(password).length : 0,
+      hasEnvPassword: !!process.env.NEXT_PUBLIC_SITE_PASSWORD,
     });
     
-    // Check if password matches the environment variable
+    // Check if password matches
     if (!password || password !== process.env.NEXT_PUBLIC_SITE_PASSWORD) {
-      console.log('Password verification failed');
-      return NextResponse.json(
-        { error: 'Invalid password' }, 
-        { status: 401 }
-      );
+      console.log('Password verification failed - wrong password');
+      return NextResponse.json({ error: 'Wrong password' }, { status: 401 });
     }
 
     console.log('Password verified successfully, setting cookie');
     
-    // If password is correct, create response
-    const response = NextResponse.json(
-      { success: true, message: 'Password verified' }, 
-      { status: 200 }
-    );
+    // Create a basic response
+    const response = NextResponse.json({ 
+      success: true, 
+      message: 'Password accepted' 
+    });
     
-    // Set the password cookie with secure options
-    // We're using the actual password value, not a hash (ok for dev purposes)
-    // In production, consider using a token instead of the actual password
-    const cookieStore = cookies();
-    cookieStore.set('site-password', process.env.NEXT_PUBLIC_SITE_PASSWORD, {
-      httpOnly: true,                         // Makes cookie inaccessible to JavaScript
-      secure: process.env.NODE_ENV === 'production',  // HTTPS only in production
-      sameSite: 'lax',                        // Protects against CSRF
-      maxAge: 60 * 60 * 24 * 7,               // 1 week
-      path: '/',                              // Available across all pages
+    // Set password in cookie directly on the response (more reliable)
+    response.cookies.set('site-password', String(process.env.NEXT_PUBLIC_SITE_PASSWORD), {
+      httpOnly: true,               // Can't be accessed by JavaScript
+      secure: true,                 // HTTPS only 
+      sameSite: 'strict',           // Extra protection against CSRF
+      maxAge: 60 * 60 * 24 * 7,     // 1 week
+      path: '/',                    // Available on all pages
     });
 
-    console.log('Cookie set, returning success response');
+    console.log('Cookie set directly on response');
     return response;
   } catch (error) {
     console.error('Password verification error:', error);
-    return NextResponse.json(
-      { error: 'Server error' }, 
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

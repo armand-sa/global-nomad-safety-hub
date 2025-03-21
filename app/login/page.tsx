@@ -12,18 +12,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/lib/supabase";
-import { Loader2, AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { Loader2, AlertCircle, Wifi, WifiOff, CheckCircle2 } from "lucide-react";
 
-// Main page function
+// Main login page component
 export default function LoginPage() {
   // Get user info and login functions from our auth system
   const { user, signIn, signUp, error, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
+  const redirectTo = searchParams.get("redirectTo") || "/";
   
   // NEW: Add state for site password verification
   const [isVerified, setIsVerified] = useState(false);
+  const [isCheckingVerification, setIsCheckingVerification] = useState(true);
   
   // States for the login/register forms
   const [activeTab, setActiveTab] = useState<string>(tabParam === "register" ? "register" : "login");
@@ -34,19 +36,38 @@ export default function LoginPage() {
   const [networkStatus, setNetworkStatus] = useState<boolean>(true);
   const [sitePassword, setSitePassword] = useState("");
   const [sitePasswordError, setSitePasswordError] = useState<string | null>(null);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
 
-  // NEW: Check if site password is already verified when page loads
+  // Check if site password is already verified when page loads
   useEffect(() => {
     const checkVerification = async () => {
       try {
+        setIsCheckingVerification(true);
+        console.log("Checking if site password is verified...");
+        
         const response = await fetch('/api/verify-password', {
-          method: 'GET'
+          method: 'GET',
+          cache: 'no-store' // Prevent caching
         });
-        if (response.ok) {
+        
+        const data = await response.json();
+        console.log("Verification check response:", {
+          status: response.status,
+          verified: data.verified
+        });
+        
+        if (response.ok && data.verified === true) {
+          console.log("Site password is verified");
           setIsVerified(true);
+        } else {
+          console.log("Site password is not verified");
+          setIsVerified(false);
         }
       } catch (error) {
-        console.error('Failed to check verification status');
+        console.error("Error checking verification:", error);
+        setIsVerified(false);
+      } finally {
+        setIsCheckingVerification(false);
       }
     };
 
@@ -147,39 +168,63 @@ export default function LoginPage() {
   // NEW: Updated site password handler
   const handleSitePassword = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmittingPassword(true);
     setSitePasswordError(null);
 
     try {
-      // For direct debugging - will show in browser console
-      console.log("Submitting site password");
+      console.log("Submitting site password form");
       
+      // Create form data from the form submission
       const formData = new FormData(e.target as HTMLFormElement);
       
-      // Log what we're sending (don't do this in production!)
-      console.log("Password being sent:", formData.get('password'));
+      // For testing - log what we're sending (but not the actual password!)
+      console.log("Password form submitted:", {
+        hasPassword: !!formData.get('password'),
+        inputLength: formData.get('password') ? String(formData.get('password')).length : 0
+      });
       
+      // Send the password to our verification API
       const response = await fetch('/api/verify-password', {
         method: 'POST',
-        body: formData
+        body: formData,
+        cache: 'no-store'
       });
 
+      // Get the response data
       const data = await response.json();
-      console.log("Response from API:", data);
+      console.log("Password submission response:", {
+        status: response.status,
+        success: data.success
+      });
 
-      if (!response.ok) {
-        console.error("Password verification failed:", data);
-        setSitePasswordError("Invalid site password");
-        return;
+      // Check if the request was successful
+      if (response.ok && data.success) {
+        console.log("Password verification successful!");
+        // Password verified, refresh the page to apply cookie
+        window.location.href = redirectTo || '/'; // Redirect to intended page or home
+      } else {
+        console.error("Password verification failed:", data.error);
+        setSitePasswordError("The password you entered is incorrect. Please try again.");
       }
-
-      console.log("Password verified successfully");
-      // Password is correct, refresh the page to apply cookie
-      window.location.reload();
     } catch (error) {
-      console.error("Password verification error:", error);
-      setSitePasswordError("Failed to verify password. Please try again.");
+      console.error("Error submitting password:", error);
+      setSitePasswordError("There was a problem verifying the password. Please try again.");
+    } finally {
+      setIsSubmittingPassword(false);
     }
   };
+
+  // Show loading spinner while checking verification
+  if (isCheckingVerification) {
+    return (
+      <div className="container max-w-screen-xl mx-auto px-4 flex h-screen w-screen flex-col items-center justify-center">
+        <div className="mx-auto flex w-full flex-col items-center justify-center space-y-6 sm:w-[350px]">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <p className="text-center text-muted-foreground">Checking site access...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-screen-xl mx-auto px-4 flex h-screen w-screen flex-col items-center justify-center">
@@ -197,12 +242,15 @@ export default function LoginPage() {
         </div>
 
         {!isVerified ? (
-          <Card className="mb-6">
+          <Card className="mb-6 border-2 border-primary-foreground">
             <form onSubmit={handleSitePassword}>
               <CardHeader>
-                <CardTitle>Site Access Required</CardTitle>
+                <CardTitle className="flex items-center">
+                  <CheckCircle2 className="mr-2 h-5 w-5 text-primary" />
+                  Site Access Required
+                </CardTitle>
                 <CardDescription>
-                  This site is currently in development. Please enter the site password to continue.
+                  This site is currently in development. Enter the site password to continue.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -216,14 +264,21 @@ export default function LoginPage() {
                     value={sitePassword}
                     onChange={(e) => setSitePassword(e.target.value)}
                     required
+                    autoFocus
+                    className="border-2"
                   />
                   {sitePasswordError && (
-                    <p className="text-sm text-destructive">{sitePasswordError}</p>
+                    <p className="text-sm font-medium text-destructive">{sitePasswordError}</p>
                   )}
                 </div>
               </CardContent>
               <CardFooter>
-                <Button className="w-full" type="submit">
+                <Button 
+                  className="w-full" 
+                  type="submit" 
+                  disabled={isSubmittingPassword}
+                >
+                  {isSubmittingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Access Site
                 </Button>
               </CardFooter>
