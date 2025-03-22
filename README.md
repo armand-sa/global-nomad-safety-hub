@@ -23,7 +23,7 @@ A **MOBILE-FIRST** comprehensive safety platform helping digital nomads and glob
 - Share expert safety knowledge
 - Build a safety-focused traveler community
 
-## Current Features & Progress
+## Current Features & Progress --->
 
 ### ✅ Completed Features
 - Basic site structure and navigation
