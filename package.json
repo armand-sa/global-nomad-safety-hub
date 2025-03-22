@@ -43,7 +43,6 @@
     "@supabase/auth-ui-shared": "^0.1.8",
     "@supabase/supabase-js": "^2.41.0",
     "@types/node": "20.6.2",
-    "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",
     "autoprefixer": "10.4.15",
     "bufferutil": "^4.0.9",
@@ -73,5 +72,8 @@
     "utf-8-validate": "^6.0.5",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.19"
   }
 }
