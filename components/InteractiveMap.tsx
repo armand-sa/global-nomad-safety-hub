@@ -30,6 +30,10 @@ const Marker = dynamic(
   () => import("react-leaflet").then((mod) => mod.Marker),
   { ssr: false }
 );
+const ZoomControl = dynamic(
+  () => import("react-leaflet").then((mod) => mod.ZoomControl),
+  { ssr: false }
+);
 
 // Fix Leaflet default icon issue in Next.js
 if (typeof window !== 'undefined') {
@@ -55,11 +59,6 @@ const useCurrentTheme = () => {
   
   return currentTheme;
 };
-
-// Type for the whenReady event handler
-interface MapReadyEvent {
-  target: LeafletMapType;
-}
 
 // Language options
 const languages = [
@@ -87,6 +86,26 @@ const zoomLevels = [
   { name: "14 - Close", value: 14 },
   { name: "16 - Street", value: 16 },
 ];
+
+// MapEvents component to handle map events
+const MapEvents = ({ map, onZoomChange }: { map: LeafletMapType | null, onZoomChange: (zoom: number) => void }) => {
+  useEffect(() => {
+    if (!map) return;
+    
+    const handleZoom = () => {
+      const currentZoom = map.getZoom();
+      onZoomChange(currentZoom);
+    };
+    
+    map.on('zoom', handleZoom);
+    
+    return () => {
+      map.off('zoom', handleZoom);
+    };
+  }, [map, onZoomChange]);
+  
+  return null;
+};
 
 const InteractiveMap = () => {
   const [mounted, setMounted] = useState(false);
@@ -123,28 +142,29 @@ const InteractiveMap = () => {
     setIsDraggable(!isDraggable);
   };
 
-  // Handle map zoom change
-  const handleZoomChange = (zoom: any) => {
+  // Handle map zoom change (from zoom control or programmatically)
+  const handleZoomChange = (zoom: number) => {
+    const closestZoomLevel = zoomLevels.reduce((prev, curr) => 
+      Math.abs(curr.value - zoom) < Math.abs(prev.value - zoom) ? curr : prev
+    );
+    setSelectedZoom(closestZoomLevel);
+  };
+
+  // Handle zoom selector change
+  const handleZoomSelectorChange = (zoom: typeof zoomLevels[0]) => {
     setSelectedZoom(zoom);
     if (mapRef.current) {
-      mapRef.current.setZoom(zoom.value);
+      mapRef.current.setView([center[0], center[1]], zoom.value);
     }
   };
 
-  // Handle map ready event
-  const handleMapReady = (event: any) => {
-    mapRef.current = event.target;
+  // Effect to apply the map ref when it's ready
+  const setMapRef = (map: LeafletMapType) => {
+    mapRef.current = map;
+    
+    // Initial fitting of map to properly show the circle
+    map.setView([center[0], center[1]], selectedZoom.value);
   };
-
-  // Effect to update map when zoom changes
-  useEffect(() => {
-    if (mapRef.current) {
-      mapRef.current.setZoom(selectedZoom.value);
-      
-      // Ensure the circle is centered
-      mapRef.current.setView([center[0], center[1]], selectedZoom.value);
-    }
-  }, [selectedZoom.value, center]);
 
   if (!mounted) return null;
 
@@ -213,7 +233,7 @@ const InteractiveMap = () => {
 
         {/* Zoom Level Selector */}
         <div className="w-full sm:w-56">
-          <Listbox value={selectedZoom} onChange={handleZoomChange}>
+          <Listbox value={selectedZoom} onChange={handleZoomSelectorChange}>
             <div className="relative mt-1">
               <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-background border border-border/30 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/75 sm:text-sm transition-all hover:shadow-lg">
                 <span className="block truncate">{selectedZoom.name}</span>
@@ -282,7 +302,7 @@ const InteractiveMap = () => {
               doubleClickZoom={false}
               attributionControl={false}
               zoomControl={false}
-              whenReady={handleMapReady}
+              whenReady={({ target }: { target: LeafletMapType }) => setMapRef(target)}
             >
               <TileLayer
                 url={mapTileUrl}
@@ -311,6 +331,9 @@ const InteractiveMap = () => {
                   </motion.div>
                 </Tooltip>
               </Circle>
+              
+              {/* Map Events Handler */}
+              <MapEvents map={mapRef.current} onZoomChange={handleZoomChange} />
               
               {/* Attribution (styled and animated) */}
               <div className={`absolute bottom-2 right-2 z-[1000] text-xs ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-600'} bg-background/60 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm`}>
