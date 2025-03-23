@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Circle, Tooltip, useMap } from 'react-leaflet';
-import { LatLngTuple } from 'leaflet';
+import { useEffect, useState, useRef } from 'react';
+import { MapContainer, TileLayer, Circle, Tooltip, useMap, AttributionControl } from 'react-leaflet';
+import { LatLngTuple, Map as LeafletMap } from 'leaflet';
 import { useTheme } from 'next-themes';
 import 'leaflet/dist/leaflet.css';
 
@@ -64,7 +64,7 @@ function ZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme: strin
   };
 
   return (
-    <div className="absolute top-3 right-3 z-[1000] max-w-[140px] xs:max-w-none">
+    <div className="absolute top-3 right-3 z-50 max-w-[140px] xs:max-w-none">
       <div className={`
         flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 
         ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
@@ -98,12 +98,37 @@ function ZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme: strin
   );
 }
 
+// Component to fit circle bounds
+function FitCircleBounds() {
+  const map = useMap();
+  
+  useEffect(() => {
+    // Set zoom level to show the entire circle
+    const chiangMaiPosition = [18.7883, 98.9853] as LatLngTuple;
+    const radius = 5000; // meters
+    
+    // Create a circle and get its bounds
+    import('leaflet').then((L) => {
+      const circle = L.circle(chiangMaiPosition, radius);
+      const bounds = circle.getBounds();
+      
+      // Fit the map to the circle bounds with padding
+      map.fitBounds(bounds, {
+        padding: [50, 50]
+      });
+    });
+  }, [map]);
+  
+  return null;
+}
+
 const defaultCenter: LatLngTuple = [18.7883, 98.9853]; // Chiang Mai coordinates
 const defaultZoom = 13; // Default zoom to show full safety circle
 
 export default function InteractiveMap() {
   const { theme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
+  const mapRef = useRef<LeafletMap | null>(null);
 
   // Only render component after mount
   useEffect(() => {
@@ -153,13 +178,17 @@ export default function InteractiveMap() {
         dragging={true}
         tap={true}
         className="w-full h-full"
+        attributionControl={false} // Disable default attribution
+        ref={(ref) => { if (ref) mapRef.current = ref; }}
       >
+        <AttributionControl position="bottomright" prefix={false} />
         <TileLayer
           url={tileUrl}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          attribution='<a href="https://www.openstreetmap.org/copyright" class="map-attribution">© OSM</a> <a href="https://carto.com/attributions" class="map-attribution">© CARTO</a>'
           maxZoom={19}
         />
         <ZoomControl defaultZoom={defaultZoom} theme={theme} />
+        <FitCircleBounds />
         {safetyLocations.map((location) => (
           <Circle
             key={location.name}
