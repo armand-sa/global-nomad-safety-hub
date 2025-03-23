@@ -33,4 +33,17 @@
   100% {
     transform: translateY(-3px);
   }
+}
+
+/* Ensure dropdown is above map controls */
+.leaflet-top, 
+.leaflet-bottom {
+  z-index: 900 !important;
+}
+
+/* Mobile-friendly select padding for touch */
+@media (max-width: 640px) {
+  select {
+    padding: 0.25rem 0.5rem !important;
+  }
 } 

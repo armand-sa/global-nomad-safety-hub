@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { MapContainer, TileLayer, Circle, Tooltip } from 'react-leaflet';
+import { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Circle, Tooltip, useMap } from 'react-leaflet';
 import { LatLngTuple } from 'leaflet';
 import { useTheme } from 'next-themes';
 import 'leaflet/dist/leaflet.css';
@@ -42,7 +42,64 @@ const safetyLocations: SafetyLocation[] = [
   }
 ];
 
+// Zoom levels: higher number = closer view. Default (13) shows full safety circle.
+const zoomLevels = [
+  { value: 10, label: "Far" },
+  { value: 12, label: "Medium" },
+  { value: 13, label: "Circle Fit" }, // Default
+  { value: 14, label: "Close" },
+  { value: 16, label: "Street" }
+];
+
+// Component to control zoom level
+function ZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme: string | undefined }) {
+  const [zoom, setZoom] = useState(defaultZoom);
+  const map = useMap();
+
+  // Update map zoom when dropdown changes
+  const handleZoomChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newZoom = parseInt(e.target.value, 10);
+    setZoom(newZoom);
+    map.setZoom(newZoom);
+  };
+
+  return (
+    <div className="absolute top-3 right-3 z-[1000] max-w-[140px] xs:max-w-none">
+      <div className={`
+        flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 
+        ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
+        rounded-xl shadow-lg backdrop-blur-sm
+        border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
+        text-xs sm:text-sm
+      `}>
+        <label htmlFor="zoom-select" className="font-medium whitespace-nowrap">Zoom:</label>
+        <select 
+          id="zoom-select"
+          value={zoom}
+          onChange={handleZoomChange}
+          className={`
+            rounded-lg px-1 sm:px-2 py-1 
+            ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'} 
+            border text-xs sm:text-sm 
+            focus:outline-none focus:ring-2 focus:ring-primary/50
+            cursor-pointer hover:bg-opacity-90 transition-colors
+            min-w-[70px] sm:min-w-[90px]
+            touch-manipulation
+          `}
+        >
+          {zoomLevels.map((level) => (
+            <option key={level.value} value={level.value}>
+              {level.value}{level.label ? ` - ${level.label}` : ''}
+            </option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
 const defaultCenter: LatLngTuple = [18.7883, 98.9853]; // Chiang Mai coordinates
+const defaultZoom = 13; // Default zoom to show full safety circle
 
 export default function InteractiveMap() {
   const { theme } = useTheme();
@@ -65,10 +122,10 @@ export default function InteractiveMap() {
     : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
 
   return (
-    <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg">
+    <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg relative">
       <MapContainer
         center={defaultCenter}
-        zoom={14}
+        zoom={defaultZoom}
         scrollWheelZoom={false}
         dragging={true}
         tap={true}
@@ -79,6 +136,7 @@ export default function InteractiveMap() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
           maxZoom={19}
         />
+        <ZoomControl defaultZoom={defaultZoom} theme={theme} />
         {safetyLocations.map((location) => (
           <Circle
             key={location.name}

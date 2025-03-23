@@ -147,6 +147,9 @@ const config: Config = {
         'ripple': 'ripple 1.5s ease-out infinite',
         'breathe': 'breathe 8s ease-in-out infinite',
       },
+      screens: {
+        'xs': '480px',
+      },
     },
   },
   plugins: [require('tailwindcss-animate')],
