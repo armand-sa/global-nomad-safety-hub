@@ -65,14 +65,18 @@ const fitMapToCircle = (map: LeafletMapType, center: [number, number], radius: n
   // Convert radius from meters to degrees (approximate)
   const radiusInDegrees = radius / 111000; // 1 degree is roughly 111km
 
-  // Create bounds with padding
+  // Create bounds with padding - adjusted for better mobile viewing
   const bounds = [
-    [center[0] - radiusInDegrees * 1.5, center[1] - radiusInDegrees * 1.5],
-    [center[0] + radiusInDegrees * 1.5, center[1] + radiusInDegrees * 1.5]
+    [center[0] - radiusInDegrees * 1.8, center[1] - radiusInDegrees * 1.8],
+    [center[0] + radiusInDegrees * 1.8, center[1] + radiusInDegrees * 1.8]
   ];
   
-  // Fit the map to these bounds
-  map.fitBounds(bounds as any);
+  // Fit the map to these bounds with animation
+  map.fitBounds(bounds as any, {
+    animate: true,
+    duration: 1.0,
+    padding: [30, 30] // Add padding in pixels
+  });
 };
 
 // Language options
@@ -149,6 +153,7 @@ const InteractiveMap = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const mapRef = useRef<LeafletMapType | null>(null);
   const [windowWidth, setWindowWidth] = useState<number | undefined>(undefined);
+  const [mapIsReady, setMapIsReady] = useState(false);
   
   // Map center and radius (Chiang Mai with 5km radius)
   const center: [number, number] = [18.7883, 98.9853]; // Chiang Mai coordinates
@@ -191,10 +196,13 @@ const InteractiveMap = () => {
 
   // Handle map zoom change (from zoom control or programmatically)
   const handleZoomChange = (zoom: number) => {
-    const closestZoomLevel = zoomLevels.reduce((prev, curr) => 
-      Math.abs(curr.value - zoom) < Math.abs(prev.value - zoom) ? curr : prev
-    );
-    setSelectedZoom(closestZoomLevel);
+    // Only update if the difference is significant to avoid flickering
+    if (Math.abs(zoom - selectedZoom.value) >= 0.5) {
+      const closestZoomLevel = zoomLevels.reduce((prev, curr) => 
+        Math.abs(curr.value - zoom) < Math.abs(prev.value - zoom) ? curr : prev
+      );
+      setSelectedZoom(closestZoomLevel);
+    }
   };
 
   // Handle zoom selector change
@@ -208,10 +216,13 @@ const InteractiveMap = () => {
         // Medium zoom needs more specific handling
         mapRef.current.setView([center[0], center[1]], zoom.value, {
           animate: true,
-          duration: 0.5
+          duration: 1.0
         });
       } else {
-        mapRef.current.setView([center[0], center[1]], zoom.value);
+        mapRef.current.setView([center[0], center[1]], zoom.value, {
+          animate: true,
+          duration: 0.8
+        });
       }
     }
   };
@@ -224,6 +235,7 @@ const InteractiveMap = () => {
   // Handle map ready event
   const handleMapReady = (event: any) => {
     setMapRef(event.target);
+    setMapIsReady(true);
   };
 
   // Effect to apply the map ref when it's ready
@@ -237,12 +249,34 @@ const InteractiveMap = () => {
       // Medium zoom needs special handling
       map.setView([center[0], center[1]], selectedZoom.value, {
         animate: true,
-        duration: 0.5
+        duration: 1.0
       });
     } else {
-      map.setView([center[0], center[1]], selectedZoom.value);
+      map.setView([center[0], center[1]], selectedZoom.value, {
+        animate: true,
+        duration: 0.8
+      });
     }
   };
+
+  // Effect to apply zoom changes when selected zoom changes
+  useEffect(() => {
+    if (mapRef.current && mapIsReady) {
+      if (selectedZoom.value === 13) {
+        fitMapToCircle(mapRef.current, center, radius);
+      } else if (selectedZoom.value === 12) {
+        mapRef.current.setView([center[0], center[1]], selectedZoom.value, {
+          animate: true,
+          duration: 1.0
+        });
+      } else {
+        mapRef.current.setView([center[0], center[1]], selectedZoom.value, {
+          animate: true,
+          duration: 0.8
+        });
+      }
+    }
+  }, [selectedZoom.value, mapIsReady]);
 
   // Get current translation based on selected language
   const currentTranslation = translations[selectedLanguage.code as keyof typeof translations] || translations.en;
@@ -254,7 +288,7 @@ const InteractiveMap = () => {
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center px-2 sm:px-4 mb-2">
         {/* Language Selector */}
         <div className="w-full sm:w-56">
-          <label className="block text-sm font-medium mb-1.5 text-muted-foreground pl-1">
+          <label className="block text-sm font-medium mb-1.5 text-muted-foreground pl-3">
             Display Language
           </label>
           <Listbox value={selectedLanguage} onChange={handleLanguageChange}>
@@ -317,7 +351,7 @@ const InteractiveMap = () => {
 
         {/* Zoom Level Selector */}
         <div className="w-full sm:w-56">
-          <label className="block text-sm font-medium mb-1.5 text-muted-foreground pl-1">
+          <label className="block text-sm font-medium mb-1.5 text-muted-foreground pl-3">
             Zoom Level
           </label>
           <Listbox value={selectedZoom} onChange={handleZoomSelectorChange}>
@@ -381,7 +415,7 @@ const InteractiveMap = () => {
         {mounted && (
           <div className="h-full w-full relative">
             <MapContainer 
-              key={`${currentTheme}-${windowWidth}-${selectedLanguage.code}`} // Re-render map when theme, width, or language changes
+              key={`${currentTheme}-${windowWidth}-${selectedLanguage.code}-${selectedZoom.value}`} // Re-render map when theme, width, language or zoom changes
               style={{ height: '100%', width: '100%' }}
               center={center}
               zoom={selectedZoom.value}
@@ -424,7 +458,7 @@ const InteractiveMap = () => {
               <MapEvents map={mapRef.current} onZoomChange={handleZoomChange} />
               
               {/* Attribution (styled and animated) */}
-              <div className="absolute bottom-2 right-2 z-[1000] text-xs text-gray-500 dark:text-gray-400 bg-background/70 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm">
+              <div className="absolute bottom-2 right-2 z-[400] text-xs text-gray-500 dark:text-gray-400 bg-background/70 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm">
                 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:text-primary">OpenStreetMap</a> contributors | 
                 © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="hover:text-primary">CARTO</a>
               </div>
