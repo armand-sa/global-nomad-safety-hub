@@ -158,6 +158,11 @@ const InteractiveMap = () => {
     }
   };
 
+  // Handle map ready event
+  const handleMapReady = (event: any) => {
+    setMapRef(event.target);
+  };
+
   // Effect to apply the map ref when it's ready
   const setMapRef = (map: LeafletMapType) => {
     mapRef.current = map;
@@ -302,7 +307,8 @@ const InteractiveMap = () => {
               doubleClickZoom={false}
               attributionControl={false}
               zoomControl={false}
-              whenReady={({ target }: { target: LeafletMapType }) => setMapRef(target)}
+              // @ts-ignore - TypeScript doesn't have correct typings for react-leaflet
+              whenReady={handleMapReady}
             >
               <TileLayer
                 url={mapTileUrl}
