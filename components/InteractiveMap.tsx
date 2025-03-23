@@ -60,6 +60,21 @@ const useCurrentTheme = () => {
   return currentTheme;
 };
 
+// Function to fit map bounds to circle with padding
+const fitMapToCircle = (map: LeafletMapType, center: [number, number], radius: number) => {
+  // Convert radius from meters to degrees (approximate)
+  const radiusInDegrees = radius / 111000; // 1 degree is roughly 111km
+
+  // Create bounds with padding
+  const bounds = [
+    [center[0] - radiusInDegrees * 1.5, center[1] - radiusInDegrees * 1.5],
+    [center[0] + radiusInDegrees * 1.5, center[1] + radiusInDegrees * 1.5]
+  ];
+  
+  // Fit the map to these bounds
+  map.fitBounds(bounds as any);
+};
+
 // Language options
 const languages = [
   { name: "English", code: "en" },
@@ -77,6 +92,24 @@ const languages = [
   { name: "Čeština", code: "cs" },
   { name: "Magyar", code: "hu" },
 ];
+
+// Translations for the tooltip text
+const translations = {
+  en: { city: "Chiang Mai", safety: "Very Safe" },
+  fr: { city: "Chiang Mai", safety: "Très Sûr" },
+  es: { city: "Chiang Mai", safety: "Muy Seguro" },
+  de: { city: "Chiang Mai", safety: "Sehr Sicher" },
+  it: { city: "Chiang Mai", safety: "Molto Sicuro" },
+  nl: { city: "Chiang Mai", safety: "Zeer Veilig" },
+  pt: { city: "Chiang Mai", safety: "Muito Seguro" },
+  pl: { city: "Chiang Mai", safety: "Bardzo Bezpieczne" },
+  sv: { city: "Chiang Mai", safety: "Mycket Säkert" },
+  no: { city: "Chiang Mai", safety: "Veldig Trygt" },
+  da: { city: "Chiang Mai", safety: "Meget Sikkert" },
+  fi: { city: "Chiang Mai", safety: "Erittäin Turvallinen" },
+  cs: { city: "Chiang Mai", safety: "Velmi Bezpečné" },
+  hu: { city: "Chiang Mai", safety: "Nagyon Biztonságos" },
+};
 
 // Zoom level options
 const zoomLevels = [
@@ -115,9 +148,10 @@ const InteractiveMap = () => {
   const [isDraggable, setIsDraggable] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const mapRef = useRef<LeafletMapType | null>(null);
+  const [windowWidth, setWindowWidth] = useState<number | undefined>(undefined);
   
   // Map center and radius (Chiang Mai with 5km radius)
-  const center = [18.7883, 98.9853]; // Chiang Mai coordinates
+  const center: [number, number] = [18.7883, 98.9853]; // Chiang Mai coordinates
   const radius = 5000; // 5km in meters
   
   // Theme-based map tile URL
@@ -125,9 +159,22 @@ const InteractiveMap = () => {
     ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
     : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
 
-  // Set mounted to true on client side
+  // Set mounted to true on client side and track window width
   useEffect(() => {
     setMounted(true);
+    
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    // Set initial width
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Clean up
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Filter languages based on search query
@@ -154,8 +201,18 @@ const InteractiveMap = () => {
   const handleZoomSelectorChange = (zoom: typeof zoomLevels[0]) => {
     setSelectedZoom(zoom);
     if (mapRef.current) {
-      mapRef.current.setView([center[0], center[1]], zoom.value);
+      if (zoom.value === 13) {
+        // Special case for "Circle Fit"
+        fitMapToCircle(mapRef.current, center, radius);
+      } else {
+        mapRef.current.setView([center[0], center[1]], zoom.value);
+      }
     }
+  };
+
+  // Handle language change
+  const handleLanguageChange = (language: typeof languages[0]) => {
+    setSelectedLanguage(language);
   };
 
   // Handle map ready event
@@ -168,8 +225,15 @@ const InteractiveMap = () => {
     mapRef.current = map;
     
     // Initial fitting of map to properly show the circle
-    map.setView([center[0], center[1]], selectedZoom.value);
+    if (selectedZoom.value === 13) {
+      fitMapToCircle(map, center, radius);
+    } else {
+      map.setView([center[0], center[1]], selectedZoom.value);
+    }
   };
+
+  // Get current translation based on selected language
+  const currentTranslation = translations[selectedLanguage.code as keyof typeof translations] || translations.en;
 
   if (!mounted) return null;
 
@@ -178,7 +242,7 @@ const InteractiveMap = () => {
       <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
         {/* Language Selector */}
         <div className="w-full sm:w-56">
-          <Listbox value={selectedLanguage} onChange={setSelectedLanguage}>
+          <Listbox value={selectedLanguage} onChange={handleLanguageChange}>
             <div className="relative mt-1">
               <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-background border border-border/30 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/75 sm:text-sm transition-all hover:shadow-lg">
                 <span className="block truncate">{selectedLanguage.name}</span>
@@ -299,9 +363,9 @@ const InteractiveMap = () => {
         {mounted && (
           <div className="h-full w-full relative">
             <MapContainer 
-              key={currentTheme} // Re-render map when theme changes
+              key={`${currentTheme}-${windowWidth}-${selectedLanguage.code}`} // Re-render map when theme, width, or language changes
               style={{ height: '100%', width: '100%' }}
-              center={[center[0], center[1]]}
+              center={center}
               zoom={selectedZoom.value}
               dragging={isDraggable}
               doubleClickZoom={false}
@@ -315,7 +379,7 @@ const InteractiveMap = () => {
               />
               
               <Circle 
-                center={[center[0], center[1]]}
+                center={center}
                 pathOptions={{ 
                   color: '#10b981', 
                   fillColor: '#10b981', 
@@ -332,8 +396,8 @@ const InteractiveMap = () => {
                     animate={{ y: [0, -5, 0] }}
                     transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
                   >
-                    <p className="font-bold text-sm">Chiang Mai</p>
-                    <p className="text-xs opacity-80">Very Safe</p>
+                    <p className="font-bold text-sm">{currentTranslation.city}</p>
+                    <p className="text-xs opacity-80">{currentTranslation.safety}</p>
                   </motion.div>
                 </Tooltip>
               </Circle>
