@@ -204,6 +204,12 @@ const InteractiveMap = () => {
       if (zoom.value === 13) {
         // Special case for "Circle Fit"
         fitMapToCircle(mapRef.current, center, radius);
+      } else if (zoom.value === 12) {
+        // Medium zoom needs more specific handling
+        mapRef.current.setView([center[0], center[1]], zoom.value, {
+          animate: true,
+          duration: 0.5
+        });
       } else {
         mapRef.current.setView([center[0], center[1]], zoom.value);
       }
@@ -227,6 +233,12 @@ const InteractiveMap = () => {
     // Initial fitting of map to properly show the circle
     if (selectedZoom.value === 13) {
       fitMapToCircle(map, center, radius);
+    } else if (selectedZoom.value === 12) {
+      // Medium zoom needs special handling
+      map.setView([center[0], center[1]], selectedZoom.value, {
+        animate: true,
+        duration: 0.5
+      });
     } else {
       map.setView([center[0], center[1]], selectedZoom.value);
     }
@@ -242,7 +254,7 @@ const InteractiveMap = () => {
       <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center px-2 sm:px-4 mb-2">
         {/* Language Selector */}
         <div className="w-full sm:w-56">
-          <label className="block text-sm font-medium mb-1.5 text-foreground">
+          <label className="block text-sm font-medium mb-1.5 text-muted-foreground pl-1">
             Display Language
           </label>
           <Listbox value={selectedLanguage} onChange={handleLanguageChange}>
@@ -305,7 +317,7 @@ const InteractiveMap = () => {
 
         {/* Zoom Level Selector */}
         <div className="w-full sm:w-56">
-          <label className="block text-sm font-medium mb-1.5 text-foreground">
+          <label className="block text-sm font-medium mb-1.5 text-muted-foreground pl-1">
             Zoom Level
           </label>
           <Listbox value={selectedZoom} onChange={handleZoomSelectorChange}>
@@ -412,7 +424,7 @@ const InteractiveMap = () => {
               <MapEvents map={mapRef.current} onZoomChange={handleZoomChange} />
               
               {/* Attribution (styled and animated) */}
-              <div className={`absolute bottom-2 right-2 z-[1000] text-xs ${currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-600'} bg-background/60 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm`}>
+              <div className="absolute bottom-2 right-2 z-[1000] text-xs text-gray-500 dark:text-gray-400 bg-background/70 backdrop-blur-sm px-2 py-1 rounded-md shadow-sm">
                 © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:text-primary">OpenStreetMap</a> contributors | 
                 © <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer" className="hover:text-primary">CARTO</a>
               </div>
