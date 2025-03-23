@@ -65,7 +65,7 @@ export default function InteractiveMap() {
     <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg">
       <MapContainer
         center={defaultCenter}
-        zoom={12}
+        zoom={14}
         scrollWheelZoom={false}
         dragging={true}
         tap={true}
