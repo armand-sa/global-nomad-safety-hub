@@ -151,7 +151,9 @@ export default function Home() {
             </div>
           </div>
           <div className="mx-auto max-w-5xl rounded-xl overflow-hidden shadow-lg bg-background/50 backdrop-blur-sm border border-white/10 dark:border-white/5">
-            <InteractiveMap />
+            <div className="px-0 sm:px-4 pt-4">
+              <InteractiveMap />
+            </div>
           </div>
           <div className="flex justify-center mt-6">
             <Link href="/map">

@@ -239,11 +239,14 @@ const InteractiveMap = () => {
 
   return (
     <div className="w-full flex flex-col space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center px-2 sm:px-4 mb-2">
         {/* Language Selector */}
         <div className="w-full sm:w-56">
+          <label className="block text-sm font-medium mb-1.5 text-foreground">
+            Display Language
+          </label>
           <Listbox value={selectedLanguage} onChange={handleLanguageChange}>
-            <div className="relative mt-1">
+            <div className="relative">
               <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-background border border-border/30 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/75 sm:text-sm transition-all hover:shadow-lg">
                 <span className="block truncate">{selectedLanguage.name}</span>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
@@ -302,8 +305,11 @@ const InteractiveMap = () => {
 
         {/* Zoom Level Selector */}
         <div className="w-full sm:w-56">
+          <label className="block text-sm font-medium mb-1.5 text-foreground">
+            Zoom Level
+          </label>
           <Listbox value={selectedZoom} onChange={handleZoomSelectorChange}>
-            <div className="relative mt-1">
+            <div className="relative">
               <Listbox.Button className="relative w-full cursor-pointer rounded-lg bg-background border border-border/30 py-2 pl-3 pr-10 text-left shadow-md focus:outline-none focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/75 sm:text-sm transition-all hover:shadow-lg">
                 <span className="block truncate">{selectedZoom.name}</span>
                 <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
