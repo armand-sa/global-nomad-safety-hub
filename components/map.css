@@ -20,12 +20,29 @@
   z-index: 1000 !important;
   max-width: 80% !important;
   text-align: center !important;
+  background: transparent !important;
 }
 
 /* Add subtle animation to tooltips */
 .custom-tooltip > div {
   animation: tooltipFloat 2s ease-in-out infinite alternate;
   transform-origin: center bottom;
+  background-color: var(--tooltip-bg, white) !important;
+  color: var(--tooltip-text, black) !important;
+  opacity: 1 !important;
+}
+
+/* Add more specificity for dark mode tooltips */
+.dark .custom-tooltip > div {
+  --tooltip-bg: rgb(31 41 55);  /* bg-gray-800 */
+  --tooltip-text: rgb(243 244 246);  /* text-gray-100 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+.custom-tooltip > div {
+  --tooltip-bg: white;
+  --tooltip-text: rgb(31 41 55);  /* text-gray-800 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 @keyframes tooltipFloat {
@@ -93,7 +110,7 @@
   opacity: 1 !important;
   transition: opacity 0.2s ease-in-out !important;
   right: 3px !important;
-  bottom: 40px !important;
+  bottom: 45px !important;
   line-height: 1 !important;
   max-width: 80% !important;
   overflow: hidden !important;
@@ -103,6 +120,7 @@
   pointer-events: auto !important;
   display: block !important;
   visibility: visible !important;
+  box-shadow: 0 0 3px rgba(0,0,0,0.1) !important;
 }
 
 .leaflet-control-attribution:hover {
@@ -181,5 +199,14 @@
   
   .custom-tooltip > div > div {
     font-size: 10px !important;
+  }
+}
+
+/* Position attribution differently on mobile */
+@media (max-width: 640px) {
+  .leaflet-control-attribution {
+    bottom: 60px !important;
+    right: 5px !important;
+    max-width: 150px !important;
   }
 } 

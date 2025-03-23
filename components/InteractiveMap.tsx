@@ -78,15 +78,15 @@ function CustomZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme:
   };
 
   return (
-    <div className={`absolute ${isMobile ? 'top-14 right-2' : 'top-3 right-3'} z-[9999] max-w-[140px] xs:max-w-none ${isMobile ? 'dropdown-up' : ''}`}>
+    <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-3 right-3'} z-[9999] max-w-[140px] xs:max-w-none ${isMobile ? 'dropdown-up' : ''}`}>
       <div className={`
         flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 
-        ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
-        rounded-xl shadow-lg backdrop-blur-sm
+        ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-800'} 
+        rounded-xl shadow-lg
         border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
-        text-xs sm:text-sm
+        text-xs sm:text-sm whitespace-nowrap
       `}>
-        <label htmlFor="zoom-select" className="font-medium whitespace-nowrap">Zoom:</label>
+        <label htmlFor="zoom-select" className="font-medium min-w-[38px]">Zoom:</label>
         <select 
           id="zoom-select"
           value={zoom}
@@ -301,7 +301,7 @@ export default function InteractiveMap() {
               offset={[0, -20]}
             >
               <div className={`
-                ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white/90 text-gray-800'}
+                ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-800'}
                 font-semibold text-xs xs:text-sm sm:text-base 
                 px-2 py-1.5 xs:px-3 xs:py-2
                 rounded-lg 
