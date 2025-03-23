@@ -6,6 +6,9 @@ import { LatLngTuple } from 'leaflet';
 import { useTheme } from 'next-themes';
 import 'leaflet/dist/leaflet.css';
 
+// Add CSS for custom tooltips
+import './map.css';
+
 // Safety locations with their details
 interface SafetyLocation {
   name: string;
@@ -94,7 +97,7 @@ export default function InteractiveMap() {
               className="custom-tooltip"
               offset={[0, -20]}
             >
-              <div className="font-semibold text-base md:text-sm px-2 py-1 bg-background/95 backdrop-blur-sm rounded-md shadow-sm border border-border">
+              <div className="bg-white text-gray-800 font-semibold text-base md:text-sm px-3 py-2 rounded-lg shadow-md border border-gray-200">
                 {location.name}
                 <div className="text-sm md:text-xs font-normal">{location.status}</div>
               </div>
