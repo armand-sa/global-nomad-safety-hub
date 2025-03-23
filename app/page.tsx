@@ -3,7 +3,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, Shield, MapPin, Bell, PenTool, CreditCard } from "lucide-react";
 import UserLocation from "@/components/location/UserLocation";
-import InteractiveMap from "@/components/InteractiveMap";
+import dynamic from 'next/dynamic';
+
+// Dynamic import for the map component with no SSR
+const InteractiveMap = dynamic(() => import('@/components/InteractiveMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg bg-muted/50 flex items-center justify-center">
+      <MapPin className="h-16 w-16 text-primary/70 animate-pulse" />
+    </div>
+  )
+});
 
 // Define consistent button styles
 const PrimaryButtonStyle = "bg-primary/90 hover:bg-primary shadow-lg hover:shadow-xl transform hover:-translate-y-[2px] active:translate-y-[1px] transition-all duration-300 border border-primary/20 backdrop-blur-sm";

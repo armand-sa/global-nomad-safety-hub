@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { MapContainer, TileLayer, Circle, Tooltip } from 'react-leaflet';
 import { LatLngTuple } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -40,6 +41,18 @@ const safetyLocations: SafetyLocation[] = [
 const defaultCenter: LatLngTuple = [18.7883, 98.9853]; // Chiang Mai coordinates
 
 export default function InteractiveMap() {
+  // Fix for Leaflet icons in Next.js
+  useEffect(() => {
+    // @ts-ignore
+    delete L.Icon.Default.prototype._getIconUrl;
+    // @ts-ignore
+    L.Icon.Default.mergeOptions({
+      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+    });
+  }, []);
+
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg">
       <MapContainer
@@ -47,12 +60,10 @@ export default function InteractiveMap() {
         zoom={13}
         scrollWheelZoom={false}
         className="w-full h-full"
-        attributionControl={true}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={19}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         {safetyLocations.map((location) => (
           <Circle
@@ -65,7 +76,7 @@ export default function InteractiveMap() {
             }}
             radius={location.radius}
           >
-            <Tooltip permanent direction="center" offset={[0, 0]}>
+            <Tooltip permanent>
               <div className="font-semibold">
                 {location.name}
                 <div className="text-sm font-normal">{location.status}</div>
