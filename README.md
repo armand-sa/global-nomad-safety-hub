@@ -339,4 +339,4 @@ SECRETS_SCAN_OMIT_PATHS=.next/**/*
 
 ### License
 This project is protected under [Your chosen license type].
-All rights reserved © 2024 [Your Company Name]
+All rights reserved © 2024 [Your Company Name]]
