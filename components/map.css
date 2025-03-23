@@ -86,11 +86,11 @@
 
 /* Style attribution to be less intrusive but still visible */
 .leaflet-control-attribution {
-  background-color: transparent !important;
+  background-color: rgba(255, 255, 255, 0.5) !important;
   border-radius: 4px !important;
   padding: 1px 4px !important;
   font-size: 7px !important;
-  opacity: 0.4 !important;
+  opacity: 1 !important;
   transition: opacity 0.2s ease-in-out !important;
   right: 3px !important;
   bottom: 3px !important;
@@ -106,11 +106,11 @@
 }
 
 .leaflet-control-attribution:hover {
-  opacity: 0.7 !important;
+  opacity: 1 !important;
 }
 
 .map-attribution {
-  color: rgba(100, 100, 100, 0.8) !important;
+  color: rgba(0, 0, 0, 0.6) !important;
   text-decoration: none !important;
   margin-right: 3px !important;
   font-weight: normal !important;
@@ -119,11 +119,11 @@
 
 /* Set appropriate attribution colors for dark mode */
 .dark .map-attribution {
-  color: rgba(200, 200, 200, 0.6) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
 }
 
 .dark .leaflet-control-attribution {
-  background-color: rgba(0, 0, 0, 0.2) !important;
+  background-color: rgba(0, 0, 0, 0.5) !important;
 }
 
 /* Properly position zoom controls */

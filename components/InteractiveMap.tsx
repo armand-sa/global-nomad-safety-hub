@@ -200,7 +200,7 @@ function MobileGestureControl() {
 }
 
 const defaultCenter: LatLngTuple = [18.7883, 98.9853]; // Chiang Mai coordinates
-const defaultZoom = 12; // Default zoom to show full safety circle
+const defaultZoom = 11; // Adjusted default zoom to show full safety circle
 
 export default function InteractiveMap() {
   const { theme } = useTheme();
@@ -259,15 +259,15 @@ export default function InteractiveMap() {
   }
 
   return (
-    <div className="w-full h-[400px] sm:h-[450px] md:h-[500px] rounded-xl overflow-hidden shadow-lg relative">
+    <div className="w-full h-[450px] sm:h-[500px] md:h-[550px] rounded-xl overflow-hidden shadow-lg relative">
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}
-        scrollWheelZoom={false} // Disable scroll wheel zoom to prevent accidental zooming
-        dragging={true} // Initially enable, but will be controlled by MobileGestureControl on mobile
+        scrollWheelZoom={false}
+        dragging={true} 
         tap={true}
         doubleClickZoom={true}
-        touchZoom={true} // Enable pinch gestures
+        touchZoom={true}
         className="w-full h-full"
         attributionControl={false}
         zoomControl={false}
@@ -301,7 +301,7 @@ export default function InteractiveMap() {
               offset={[0, -20]}
             >
               <div className={`
-                ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
+                ${theme === 'dark' ? 'bg-gray-800/95 text-gray-100' : 'bg-white/95 text-gray-800'} 
                 font-semibold text-sm xs:text-base 
                 px-2 py-1.5 xs:px-3 xs:py-2
                 rounded-lg 
