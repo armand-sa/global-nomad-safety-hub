@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { MapContainer, TileLayer, Circle, Tooltip } from 'react-leaflet';
 import { LatLngTuple } from 'leaflet';
+import { useTheme } from 'next-themes';
 import 'leaflet/dist/leaflet.css';
 
 // Safety locations with their details
@@ -41,6 +42,8 @@ const safetyLocations: SafetyLocation[] = [
 const defaultCenter: LatLngTuple = [18.7883, 98.9853]; // Chiang Mai coordinates
 
 export default function InteractiveMap() {
+  const { theme } = useTheme();
+
   // Fix for Leaflet icons in Next.js
   useEffect(() => {
     // @ts-ignore
@@ -53,17 +56,25 @@ export default function InteractiveMap() {
     });
   }, []);
 
+  // Get the appropriate tile layer URL based on theme
+  const tileUrl = theme === 'dark'
+    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg">
       <MapContainer
         center={defaultCenter}
-        zoom={13}
+        zoom={12}
         scrollWheelZoom={false}
+        dragging={true}
+        tap={true}
         className="w-full h-full"
       >
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url={tileUrl}
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          maxZoom={19}
         />
         {safetyLocations.map((location) => (
           <Circle
@@ -72,14 +83,20 @@ export default function InteractiveMap() {
             pathOptions={{
               color: location.color,
               fillColor: location.color,
-              fillOpacity: 0.2
+              fillOpacity: 0.2,
+              weight: 2
             }}
             radius={location.radius}
           >
-            <Tooltip permanent>
-              <div className="font-semibold">
+            <Tooltip 
+              permanent
+              direction="center"
+              className="custom-tooltip"
+              offset={[0, -20]}
+            >
+              <div className="font-semibold text-base md:text-sm px-2 py-1 bg-background/95 backdrop-blur-sm rounded-md shadow-sm border border-border">
                 {location.name}
-                <div className="text-sm font-normal">{location.status}</div>
+                <div className="text-sm md:text-xs font-normal">{location.status}</div>
               </div>
             </Tooltip>
           </Circle>
