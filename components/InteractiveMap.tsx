@@ -50,12 +50,16 @@ if (typeof window !== 'undefined') {
 
 // Custom hook to get the current theme
 const useCurrentTheme = () => {
-  const { resolvedTheme } = useTheme();
-  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
+  const { resolvedTheme, setTheme } = useTheme();
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark'); // Default to dark theme
   
   useEffect(() => {
-    setCurrentTheme((resolvedTheme as 'light' | 'dark') || 'light');
-  }, [resolvedTheme]);
+    // First set dark theme to ensure it starts in dark mode
+    setTheme('dark');
+    
+    // Then track theme changes
+    setCurrentTheme((resolvedTheme as 'light' | 'dark') || 'dark');
+  }, [resolvedTheme, setTheme]);
   
   return currentTheme;
 };
@@ -67,15 +71,15 @@ const fitMapToCircle = (map: LeafletMapType, center: [number, number], radius: n
 
   // Create bounds with padding - adjusted for better mobile viewing
   const bounds = [
-    [center[0] - radiusInDegrees * 1.8, center[1] - radiusInDegrees * 1.8],
-    [center[0] + radiusInDegrees * 1.8, center[1] + radiusInDegrees * 1.8]
+    [center[0] - radiusInDegrees * 2.0, center[1] - radiusInDegrees * 2.0],
+    [center[0] + radiusInDegrees * 2.0, center[1] + radiusInDegrees * 2.0]
   ];
   
   // Fit the map to these bounds with animation
   map.fitBounds(bounds as any, {
     animate: true,
     duration: 1.0,
-    padding: [30, 30] // Add padding in pixels
+    padding: [40, 40] // Add padding in pixels
   });
 };
 
@@ -240,8 +244,8 @@ const InteractiveMap = () => {
   const [mounted, setMounted] = useState(false);
   const currentTheme = useCurrentTheme();
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
-  const [selectedZoom, setSelectedZoom] = useState(zoomLevels[2]);
-  const [isDraggable, setIsDraggable] = useState(false);
+  const [selectedZoom, setSelectedZoom] = useState(zoomLevels[2]); // Default to Circle Fit (13)
+  const [isDraggable, setIsDraggable] = useState(true); // Start with dragging enabled
   const [searchQuery, setSearchQuery] = useState("");
   const mapRef = useRef<LeafletMapType | null>(null);
   const [windowWidth, setWindowWidth] = useState<number | undefined>(undefined);
@@ -283,7 +287,16 @@ const InteractiveMap = () => {
 
   // Handle mobile double-tap to enable/disable dragging
   const handleMapDoubleClick = () => {
-    setIsDraggable(!isDraggable);
+    // Only toggle dragging on mobile devices
+    if (windowWidth && windowWidth < 768) {
+      setIsDraggable(!isDraggable);
+    } else {
+      // On desktop, zoom in slightly on double-click
+      if (mapRef.current) {
+        const currentZoom = mapRef.current.getZoom();
+        mapRef.current.setZoom(currentZoom + 1);
+      }
+    }
   };
 
   // Handle map zoom change (from zoom control or programmatically)
@@ -546,7 +559,7 @@ const InteractiveMap = () => {
         {mounted && (
           <div className="h-full w-full relative">
             <MapContainer 
-              key={`${currentTheme}-${windowWidth}-${selectedLanguage.code}-${selectedZoom.value}`} // Re-render map when theme, width, language or zoom changes
+              key={`${currentTheme}-${windowWidth}-${selectedLanguage.code}-${selectedZoom.value}-${isDraggable}`} // Re-render map when any of these change
               style={{ height: '100%', width: '100%' }}
               center={safetyZones[0].center}
               zoom={selectedZoom.value}
@@ -606,7 +619,9 @@ const InteractiveMap = () => {
       
       {/* Mobile gesture instructions */}
       <div className="text-center text-sm text-muted-foreground">
-        <p>Double-tap to {isDraggable ? 'disable' : 'enable'} map dragging</p>
+        {windowWidth && windowWidth < 768 ? (
+          <p>Double-tap to {isDraggable ? 'disable' : 'enable'} map dragging</p>
+        ) : null}
       </div>
     </div>
   );
