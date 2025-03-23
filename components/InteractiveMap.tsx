@@ -78,7 +78,7 @@ function CustomZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme:
   };
 
   return (
-    <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-3 right-3'} z-[9999] max-w-[140px] xs:max-w-none ${isMobile ? 'dropdown-up' : ''}`}>
+    <div className={`absolute ${isMobile ? 'top-14 right-2' : 'top-3 right-3'} z-[9999] max-w-[140px] xs:max-w-none ${isMobile ? 'dropdown-up' : ''}`}>
       <div className={`
         flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 
         ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
@@ -130,12 +130,12 @@ function FitCircleBounds() {
         
         // Detect screen size for responsive padding
         const isMobile = window.innerWidth < 768;
-        const padding = isMobile ? [70, 70] as PointTuple : [150, 150] as PointTuple;
+        const padding = isMobile ? [50, 50] as PointTuple : [100, 100] as PointTuple;
         
         // Fit the map to the circle bounds with appropriate padding
         map.fitBounds(bounds, {
           padding: padding,
-          maxZoom: 12, // Limit how far we can zoom in
+          maxZoom: 11, // Limit how far we can zoom in
           animate: true,
           duration: 1 // 1 second animation
         });
@@ -301,18 +301,17 @@ export default function InteractiveMap() {
               offset={[0, -20]}
             >
               <div className={`
-                ${theme === 'dark' ? 'bg-gray-800/95 text-gray-100' : 'bg-white/95 text-gray-800'} 
-                font-semibold text-sm xs:text-base 
+                ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white/90 text-gray-800'}
+                font-semibold text-xs xs:text-sm sm:text-base 
                 px-2 py-1.5 xs:px-3 xs:py-2
                 rounded-lg 
                 shadow-lg 
                 border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
-                backdrop-blur-sm
                 transition-colors duration-200
               `}>
                 {location.name}
                 <div className={`
-                  text-xs xs:text-sm font-normal 
+                  text-[10px] xs:text-xs sm:text-sm font-normal 
                   ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
                 `}>
                   {location.status}
