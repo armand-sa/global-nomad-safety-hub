@@ -18,4 +18,19 @@
 .custom-tooltip {
   opacity: 1 !important;
   z-index: 1000 !important;
+}
+
+/* Add subtle animation to tooltips */
+.custom-tooltip > div {
+  animation: tooltipFloat 2s ease-in-out infinite alternate;
+  transform-origin: center bottom;
+}
+
+@keyframes tooltipFloat {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-3px);
+  }
 } 

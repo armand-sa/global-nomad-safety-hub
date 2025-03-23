@@ -97,9 +97,23 @@ export default function InteractiveMap() {
               className="custom-tooltip"
               offset={[0, -20]}
             >
-              <div className="bg-white text-gray-800 font-semibold text-base md:text-sm px-3 py-2 rounded-lg shadow-md border border-gray-200">
+              <div className={`
+                ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-800'} 
+                font-semibold text-base md:text-sm 
+                px-3 py-2 
+                rounded-lg 
+                shadow-lg 
+                border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
+                backdrop-blur-sm
+                transition-colors duration-200
+              `}>
                 {location.name}
-                <div className="text-sm md:text-xs font-normal">{location.status}</div>
+                <div className={`
+                  text-sm md:text-xs font-normal 
+                  ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
+                `}>
+                  {location.status}
+                </div>
               </div>
             </Tooltip>
           </Circle>
