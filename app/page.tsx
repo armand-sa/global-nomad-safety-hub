@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Globe, Shield, MapPin, Bell, PenTool, CreditCard } from "lucide-react";
 import UserLocation from "@/components/location/UserLocation";
+import InteractiveMap from "@/components/InteractiveMap";
 
 // Define consistent button styles
 const PrimaryButtonStyle = "bg-primary/90 hover:bg-primary shadow-lg hover:shadow-xl transform hover:-translate-y-[2px] active:translate-y-[1px] transition-all duration-300 border border-primary/20 backdrop-blur-sm";
@@ -133,7 +134,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Interactive Map Placeholder */}
+      {/* Interactive Map Section */}
       <section className="w-full py-12 md:py-24 lg:py-32 bg-muted">
         <div className="container max-w-screen-xl mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center justify-center space-y-4 text-center mb-10">
@@ -146,11 +147,8 @@ export default function Home() {
               </p>
             </div>
           </div>
-          <div className="mx-auto max-w-5xl rounded-xl overflow-hidden shadow-lg bg-background/50 backdrop-blur-sm border border-white/10 dark:border-white/5">
-            <div className="aspect-[16/9] bg-muted/50 flex items-center justify-center">
-              <MapPin className="h-16 w-16 text-primary/70" />
-              <span className="sr-only">Map placeholder</span>
-            </div>
+          <div className="mx-auto max-w-5xl">
+            <InteractiveMap />
           </div>
           <div className="flex justify-center mt-6">
             <Link href="/map">
