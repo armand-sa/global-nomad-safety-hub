@@ -50,16 +50,12 @@ if (typeof window !== 'undefined') {
 
 // Custom hook to get the current theme
 const useCurrentTheme = () => {
-  const { resolvedTheme, setTheme } = useTheme();
-  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('dark'); // Default to dark theme
+  const { resolvedTheme } = useTheme();
+  const [currentTheme, setCurrentTheme] = useState<'light' | 'dark'>('light');
   
   useEffect(() => {
-    // First set dark theme to ensure it starts in dark mode
-    setTheme('dark');
-    
-    // Then track theme changes
-    setCurrentTheme((resolvedTheme as 'light' | 'dark') || 'dark');
-  }, [resolvedTheme, setTheme]);
+    setCurrentTheme((resolvedTheme as 'light' | 'dark') || 'light');
+  }, [resolvedTheme]);
   
   return currentTheme;
 };
@@ -244,8 +240,8 @@ const InteractiveMap = () => {
   const [mounted, setMounted] = useState(false);
   const currentTheme = useCurrentTheme();
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
-  const [selectedZoom, setSelectedZoom] = useState(zoomLevels[2]); // Default to Circle Fit (13)
-  const [isDraggable, setIsDraggable] = useState(true); // Start with dragging enabled
+  const [selectedZoom, setSelectedZoom] = useState(zoomLevels[2]); // Default to Show All Zones (13)
+  const [isDraggable, setIsDraggable] = useState(false); // Start with dragging disabled for consistency
   const [searchQuery, setSearchQuery] = useState("");
   const mapRef = useRef<LeafletMapType | null>(null);
   const [windowWidth, setWindowWidth] = useState<number | undefined>(undefined);
@@ -285,18 +281,10 @@ const InteractiveMap = () => {
         lang.code.toLowerCase().includes(searchQuery.toLowerCase()))
     : languages;
 
-  // Handle mobile double-tap to enable/disable dragging
+  // Handle double-tap/click to enable/disable dragging
   const handleMapDoubleClick = () => {
-    // Only toggle dragging on mobile devices
-    if (windowWidth && windowWidth < 768) {
-      setIsDraggable(!isDraggable);
-    } else {
-      // On desktop, zoom in slightly on double-click
-      if (mapRef.current) {
-        const currentZoom = mapRef.current.getZoom();
-        mapRef.current.setZoom(currentZoom + 1);
-      }
-    }
+    // Toggle dragging for all screen sizes
+    setIsDraggable(!isDraggable);
   };
 
   // Handle map zoom change (from zoom control or programmatically)
@@ -553,7 +541,7 @@ const InteractiveMap = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full aspect-[16/9] rounded-xl overflow-hidden shadow-lg"
+        className={`w-full aspect-[16/9] rounded-xl overflow-hidden shadow-lg ${isDraggable ? 'cursor-grab active:cursor-grabbing border-2 border-primary/30' : 'cursor-default border-2 border-transparent'}`}
         onDoubleClick={handleMapDoubleClick}
       >
         {mounted && (
@@ -617,11 +605,11 @@ const InteractiveMap = () => {
         )}
       </motion.div>
       
-      {/* Mobile gesture instructions */}
-      <div className="text-center text-sm text-muted-foreground">
-        {windowWidth && windowWidth < 768 ? (
-          <p>Double-tap to {isDraggable ? 'disable' : 'enable'} map dragging</p>
-        ) : null}
+      {/* Gesture instructions with status */}
+      <div className="text-center text-sm">
+        <p className={`py-1 rounded px-3 inline-block ${isDraggable ? 'bg-primary/10 text-primary' : 'text-muted-foreground'}`}>
+          {isDraggable ? '✓ Map dragging enabled' : 'Double-tap to enable map dragging'}
+        </p>
       </div>
     </div>
   );

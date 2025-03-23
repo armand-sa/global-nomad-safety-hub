@@ -12,12 +12,6 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   // Avoid hydration mismatch by only rendering after component has mounted
   React.useEffect(() => {
     setMounted(true);
-    
-    // Set dark mode by default for all users
-    if (typeof window !== 'undefined') {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
   }, []);
 
   // Handle theme toggle
