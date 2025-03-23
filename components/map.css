@@ -48,7 +48,7 @@
   }
 }
 
-/* Style attribution to be less intrusive */
+/* Style attribution to be less intrusive but still visible */
 .leaflet-control-attribution {
   background-color: transparent !important;
   border-radius: 4px !important;
@@ -63,6 +63,10 @@
   overflow: hidden !important;
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
+  z-index: 999 !important;
+  pointer-events: auto !important;
+  display: block !important;
+  visibility: visible !important;
 }
 
 .leaflet-control-attribution:hover {
@@ -74,6 +78,7 @@
   text-decoration: none !important;
   margin-right: 3px !important;
   font-weight: normal !important;
+  display: inline !important;
 }
 
 /* Set appropriate attribution colors for dark mode */
@@ -85,13 +90,44 @@
   background-color: rgba(0, 0, 0, 0.2) !important;
 }
 
-/* Fix zoom control stacking in mobile */
-.leaflet-top .leaflet-control {
-  margin-top: 50px !important;
+/* Properly position zoom controls */
+.leaflet-control-zoom {
+  margin-top: 10px !important;
+  margin-left: 10px !important;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.15) !important;
+  border: none !important;
+}
+
+.leaflet-control-zoom a {
+  width: 30px !important;
+  height: 30px !important;
+  line-height: 30px !important;
+  color: #333 !important;
+  font-weight: bold !important;
+  border-radius: 4px !important;
+}
+
+.dark .leaflet-control-zoom a {
+  background-color: #333 !important;
+  color: #fff !important;
+  border-color: #666 !important;
 }
 
 /* Make sure the zoom dropdown is always on top */
 .leaflet-container .leaflet-control-container {
   position: relative;
   z-index: 800;
+}
+
+/* Fix zoom controls on mobile */
+@media (max-width: 640px) {
+  .leaflet-control-zoom {
+    margin-top: 60px !important;
+  }
+  
+  .leaflet-control-zoom a {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+  }
 } 

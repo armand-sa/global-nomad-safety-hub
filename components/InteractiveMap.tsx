@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Circle, Tooltip, useMap, AttributionControl } from 'react-leaflet';
-import { LatLngTuple, Map as LeafletMap } from 'leaflet';
+import { MapContainer, TileLayer, Circle, Tooltip, useMap, AttributionControl, ZoomControl as LeafletZoomControl } from 'react-leaflet';
+import { LatLngTuple, Map as LeafletMap, PointTuple } from 'leaflet';
 import { useTheme } from 'next-themes';
 import 'leaflet/dist/leaflet.css';
 
@@ -52,7 +52,7 @@ const zoomLevels = [
 ];
 
 // Component to control zoom level
-function ZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme: string | undefined }) {
+function CustomZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme: string | undefined }) {
   const [zoom, setZoom] = useState(defaultZoom);
   const map = useMap();
 
@@ -64,7 +64,7 @@ function ZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme: strin
   };
 
   return (
-    <div className="absolute top-3 right-3 z-50 max-w-[140px] xs:max-w-none">
+    <div className="absolute top-3 right-3 z-[9999] max-w-[140px] xs:max-w-none">
       <div className={`
         flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 
         ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
@@ -103,37 +103,112 @@ function FitCircleBounds() {
   const map = useMap();
   
   useEffect(() => {
-    // Set zoom level to show the entire circle
-    const chiangMaiPosition = [18.7883, 98.9853] as LatLngTuple;
-    const radius = 5000; // meters
-    
-    // Create a circle and get its bounds
-    import('leaflet').then((L) => {
-      const circle = L.circle(chiangMaiPosition, radius);
-      const bounds = circle.getBounds();
+    // Set an appropriate timeout to ensure map is fully loaded
+    const timer = setTimeout(() => {
+      // Set zoom level to show the entire circle
+      const chiangMaiPosition = [18.7883, 98.9853] as LatLngTuple;
+      const radius = 5000; // meters
       
-      // Fit the map to the circle bounds with padding
-      map.fitBounds(bounds, {
-        padding: [50, 50]
+      // Create a circle and get its bounds
+      import('leaflet').then((L) => {
+        const circle = L.circle(chiangMaiPosition, radius);
+        const bounds = circle.getBounds();
+        
+        // Detect screen size for responsive padding
+        const isMobile = window.innerWidth < 768;
+        const padding = isMobile ? [70, 70] as PointTuple : [150, 150] as PointTuple;
+        
+        // Fit the map to the circle bounds with appropriate padding
+        map.fitBounds(bounds, {
+          padding: padding,
+          maxZoom: 12, // Limit how far we can zoom in
+          animate: true,
+          duration: 1 // 1 second animation
+        });
       });
-    });
+    }, 200); // Short delay to ensure map is ready
+    
+    return () => clearTimeout(timer);
   }, [map]);
   
   return null;
 }
 
+// Component to handle mobile gesture control
+function MobileGestureControl() {
+  const map = useMap();
+  const [draggingEnabled, setDraggingEnabled] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    // Check if on mobile only after mounting
+    setIsMobile(window.innerWidth < 768);
+    
+    if (isMobile) {
+      // Disable drag by default on mobile
+      map.dragging.disable();
+      
+      // Handle double tap to enable/disable dragging
+      let lastTap = 0;
+      
+      const handleTap = (e: any) => {
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        
+        if (tapLength < 500 && tapLength > 0) {
+          // Double tap detected
+          if (draggingEnabled) {
+            map.dragging.disable();
+            setDraggingEnabled(false);
+          } else {
+            map.dragging.enable();
+            setDraggingEnabled(true);
+          }
+          e.preventDefault();
+        }
+        
+        lastTap = currentTime;
+      };
+      
+      const mapContainer = map.getContainer();
+      mapContainer.addEventListener('touchend', handleTap);
+      
+      // Listen for pinch gestures to enable zoom
+      map.touchZoom.enable();
+      
+      return () => {
+        mapContainer.removeEventListener('touchend', handleTap);
+      };
+    }
+  }, [map, draggingEnabled, isMobile]);
+  
+  return null;
+}
+
 const defaultCenter: LatLngTuple = [18.7883, 98.9853]; // Chiang Mai coordinates
-const defaultZoom = 13; // Default zoom to show full safety circle
+const defaultZoom = 12; // Default zoom to show full safety circle
 
 export default function InteractiveMap() {
   const { theme } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
   const mapRef = useRef<LeafletMap | null>(null);
+  const [showInstructions, setShowInstructions] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Only render component after mount
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    setIsMobile(window.innerWidth < 768);
+    
+    // Hide instructions after a delay
+    if (showInstructions) {
+      const timer = setTimeout(() => {
+        setShowInstructions(false);
+      }, 5000); // Hide after 5 seconds
+      
+      return () => clearTimeout(timer);
+    }
+  }, [showInstructions]);
 
   // Fix for Leaflet icons in Next.js
   useEffect(() => {
@@ -170,15 +245,18 @@ export default function InteractiveMap() {
   }
 
   return (
-    <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg relative">
+    <div className="w-full h-[400px] sm:h-[450px] md:h-[500px] rounded-xl overflow-hidden shadow-lg relative">
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}
-        scrollWheelZoom={false}
-        dragging={true}
+        scrollWheelZoom={false} // Disable scroll wheel zoom to prevent accidental zooming
+        dragging={true} // Initially enable, but will be controlled by MobileGestureControl on mobile
         tap={true}
+        doubleClickZoom={true}
+        touchZoom={true} // Enable pinch gestures
         className="w-full h-full"
-        attributionControl={false} // Disable default attribution
+        attributionControl={false}
+        zoomControl={false}
         ref={(ref) => { if (ref) mapRef.current = ref; }}
       >
         <AttributionControl position="bottomright" prefix={false} />
@@ -187,8 +265,9 @@ export default function InteractiveMap() {
           attribution='<a href="https://www.openstreetmap.org/copyright" class="map-attribution">© OSM</a> <a href="https://carto.com/attributions" class="map-attribution">© CARTO</a>'
           maxZoom={19}
         />
-        <ZoomControl defaultZoom={defaultZoom} theme={theme} />
+        <CustomZoomControl defaultZoom={defaultZoom} theme={theme} />
         <FitCircleBounds />
+        <MobileGestureControl />
         {safetyLocations.map((location) => (
           <Circle
             key={location.name}
@@ -208,9 +287,9 @@ export default function InteractiveMap() {
               offset={[0, -20]}
             >
               <div className={`
-                ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-800'} 
-                font-semibold text-base md:text-sm 
-                px-3 py-2 
+                ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
+                font-semibold text-sm xs:text-base 
+                px-2 py-1.5 xs:px-3 xs:py-2
                 rounded-lg 
                 shadow-lg 
                 border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
@@ -219,7 +298,7 @@ export default function InteractiveMap() {
               `}>
                 {location.name}
                 <div className={`
-                  text-sm md:text-xs font-normal 
+                  text-xs xs:text-sm font-normal 
                   ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}
                 `}>
                   {location.status}
@@ -229,6 +308,32 @@ export default function InteractiveMap() {
           </Circle>
         ))}
       </MapContainer>
+      
+      {/* Mobile Instructions */}
+      {showInstructions && isMounted && isMobile && (
+        <div className={`
+          absolute bottom-12 left-0 right-0 mx-auto w-[90%] max-w-[300px] z-[9999]
+          ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
+          p-3 rounded-lg shadow-lg text-center text-sm
+          border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
+          backdrop-blur-sm animate-fade-in
+        `}>
+          <p className="font-medium mb-1">Map Instructions:</p>
+          <p className="text-xs">• Double-tap to enable dragging</p>
+          <p className="text-xs">• Pinch with two fingers to zoom</p>
+          <p className="text-xs">• Use zoom controls for precise zoom</p>
+          <button 
+            onClick={() => setShowInstructions(false)}
+            className={`
+              mt-2 text-xs px-2 py-1 rounded
+              ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}
+              transition-colors
+            `}
+          >
+            Got it
+          </button>
+        </div>
+      )}
     </div>
   );
 }
