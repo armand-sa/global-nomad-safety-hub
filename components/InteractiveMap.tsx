@@ -44,17 +44,31 @@ const safetyLocations: SafetyLocation[] = [
 
 // Zoom levels: higher number = closer view. Default (13) shows full safety circle.
 const zoomLevels = [
-  { value: 10, label: "Far" },
-  { value: 12, label: "Medium" },
-  { value: 13, label: "Circle Fit" }, // Default
-  { value: 14, label: "Close" },
-  { value: 16, label: "Street" }
+  { value: 10, label: "Far", mobileLabel: "Far" },
+  { value: 12, label: "Medium", mobileLabel: "Med" },
+  { value: 13, label: "Circle Fit", mobileLabel: "Fit" }, // Default
+  { value: 14, label: "Close", mobileLabel: "Close" },
+  { value: 16, label: "Street", mobileLabel: "Street" }
 ];
 
 // Component to control zoom level
 function CustomZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme: string | undefined }) {
   const [zoom, setZoom] = useState(defaultZoom);
   const map = useMap();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if on mobile
+    setIsMobile(window.innerWidth < 768);
+    
+    // Add resize listener to adjust for orientation changes
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Update map zoom when dropdown changes
   const handleZoomChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -64,7 +78,7 @@ function CustomZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme:
   };
 
   return (
-    <div className="absolute top-3 right-3 z-[9999] max-w-[140px] xs:max-w-none">
+    <div className={`absolute ${isMobile ? 'top-2 right-2' : 'top-3 right-3'} z-[9999] max-w-[140px] xs:max-w-none ${isMobile ? 'dropdown-up' : ''}`}>
       <div className={`
         flex items-center gap-1 sm:gap-2 p-1.5 sm:p-2 
         ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
@@ -83,13 +97,13 @@ function CustomZoomControl({ defaultZoom, theme }: { defaultZoom: number, theme:
             border text-xs sm:text-sm 
             focus:outline-none focus:ring-2 focus:ring-primary/50
             cursor-pointer hover:bg-opacity-90 transition-colors
-            min-w-[70px] sm:min-w-[90px]
+            ${isMobile ? 'min-w-[60px]' : 'min-w-[70px] sm:min-w-[90px]'}
             touch-manipulation
           `}
         >
           {zoomLevels.map((level) => (
             <option key={level.value} value={level.value}>
-              {level.value}{level.label ? ` - ${level.label}` : ''}
+              {level.value}{level.label ? ` - ${isMobile ? level.mobileLabel : level.label}` : ''}
             </option>
           ))}
         </select>
