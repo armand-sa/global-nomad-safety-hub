@@ -23,7 +23,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full backdrop-blur-lg backdrop-saturate-150 bg-background/50 border-b border-white/10 dark:border-white/5 shadow-md">
+    <header className="sticky top-0 z-999 w-full backdrop-blur-lg backdrop-saturate-150 bg-background/50 border-b border-white/10 dark:border-white/5 shadow-md">
       {/* Glassmorphism background effects */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 pointer-events-none"></div>
       <div className="absolute inset-0 backdrop-filter backdrop-blur-md bg-opacity-30 pointer-events-none"></div>

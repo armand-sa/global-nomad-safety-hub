@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Circle, Tooltip, useMap, AttributionControl, ZoomControl as LeafletZoomControl } from 'react-leaflet';
+import { MapContainer, TileLayer, Circle, Tooltip, useMap, AttributionControl } from 'react-leaflet';
 import { LatLngTuple, Map as LeafletMap, PointTuple } from 'leaflet';
 import { useTheme } from 'next-themes';
 import 'leaflet/dist/leaflet.css';
@@ -241,6 +241,22 @@ export default function InteractiveMap() {
     }
   }, [isMounted]);
 
+  // Force Leaflet to update tile layer when theme changes
+  useEffect(() => {
+    if (mapRef.current) {
+      const map = mapRef.current;
+      const newUrl = theme === 'dark'
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+      map.eachLayer((layer: any) => {
+        if (layer.setUrl) {
+          layer.setUrl(newUrl);
+        }
+      });
+    }
+  }, [theme]);
+
   // Get the appropriate tile layer URL based on theme
   const tileUrl = theme === 'dark'
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
@@ -249,7 +265,7 @@ export default function InteractiveMap() {
   // Show loading state while component isn't mounted yet
   if (!isMounted) {
     return (
-      <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg bg-muted/50 flex items-center justify-center">
+      <div className="w-full min-h-[400px] sm:min-h-[450px] md:min-h-[500px] lg:min-h-[550px] rounded-xl overflow-hidden shadow-lg bg-muted/50 flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
           <div className="h-16 w-16 rounded-full bg-primary/30 mb-4"></div>
           <div className="h-4 w-32 bg-primary/30 rounded"></div>
@@ -259,7 +275,7 @@ export default function InteractiveMap() {
   }
 
   return (
-    <div className="w-full h-[450px] sm:h-[500px] md:h-[550px] rounded-xl overflow-hidden shadow-lg relative">
+    <div className="w-full min-h-[400px] sm:min-h-[450px] md:min-h-[500px] lg:min-h-[550px] rounded-xl overflow-hidden shadow-lg z-10 relative">
       <MapContainer
         center={defaultCenter}
         zoom={defaultZoom}
@@ -280,6 +296,64 @@ export default function InteractiveMap() {
           maxZoom={19}
         />
         <CustomZoomControl defaultZoom={defaultZoom} theme={theme} />
+        
+        {/* Map Language Selector */}
+        <div className={`absolute ${isMobile ? 'top-24 right-2' : 'top-20 right-3'} z-[9999]`}>
+          <div className={`
+            flex items-center gap-2 p-2 
+            rounded-xl shadow-lg backdrop-blur-sm 
+            text-xs sm:text-sm
+            ${theme === 'dark' 
+              ? 'bg-gray-800/90 text-gray-100 border border-gray-700' 
+              : 'bg-white/90 text-gray-800 border border-gray-200'
+            }
+          `}>
+            <label htmlFor="map-language" className="font-medium whitespace-nowrap">🌐 Language:</label>
+            <select
+              id="map-language"
+              onChange={(e) => {
+                const selectedLang = e.target.value;
+                // Update TileLayer here dynamically
+                const tileUrls: { [key: string]: string } = {
+                  en: theme === 'dark' 
+                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                    : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                  es: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+                  fr: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+                  pt: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+                  de: 'https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png',
+                };
+                
+                // Remove existing tile layers
+                mapRef.current?.eachLayer((layer) => {
+                  if ((layer as any)._url) {
+                    mapRef.current?.removeLayer(layer);
+                  }
+                });
+                
+                // Add new tile layer
+                const L = require("leaflet");
+                const tile = L.tileLayer(tileUrls[selectedLang] || tileUrls['en'], {
+                  attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+                });
+                tile.addTo(mapRef.current!);
+              }}
+              className={`
+                rounded-lg px-2 py-1 border
+                focus:outline-none focus:ring-2 focus:ring-primary/50
+                cursor-pointer hover:bg-opacity-90 transition-colors
+                ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}
+              `}
+            >
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="pt">Português</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </div>
+        </div>
+        
         <FitCircleBounds />
         <MobileGestureControl />
         {safetyLocations.map((location) => (
@@ -301,13 +375,10 @@ export default function InteractiveMap() {
               offset={[0, -20]}
             >
               <div className={`
-                ${theme === 'dark' ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-800'}
-                font-semibold text-xs xs:text-sm sm:text-base 
+                ${theme === 'dark' ? 'bg-gray-800 text-gray-100 border-gray-700' : 'bg-white text-gray-800 border-gray-200'}
+                font-semibold rounded-lg shadow-lg border-[0.5px] transition-colors duration-200
+                text-xs xs:text-sm sm:text-base 
                 px-2 py-1.5 xs:px-3 xs:py-2
-                rounded-lg 
-                shadow-lg 
-                border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
-                transition-colors duration-200
               `}>
                 {location.name}
                 <div className={`
@@ -325,22 +396,27 @@ export default function InteractiveMap() {
       {/* Mobile Instructions */}
       {showInstructions && isMounted && isMobile && (
         <div className={`
-          absolute bottom-12 left-0 right-0 mx-auto w-[90%] max-w-[300px] z-[9999]
-          ${theme === 'dark' ? 'bg-gray-800/90 text-gray-100' : 'bg-white/90 text-gray-800'} 
+          absolute bottom-12 left-0 right-0 mx-auto 
+          w-[90%] max-w-[300px] z-[9999]
           p-3 rounded-lg shadow-lg text-center text-sm
-          border-[0.5px] ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}
           backdrop-blur-sm animate-fade-in
+          ${theme === 'dark' 
+            ? 'bg-gray-800/90 text-gray-100 border border-gray-700' 
+            : 'bg-white/90 text-gray-800 border border-gray-200'
+          }
         `}>
           <p className="font-medium mb-1">Map Instructions:</p>
-          <p className="text-xs">• Double-tap to enable dragging</p>
-          <p className="text-xs">• Pinch with two fingers to zoom</p>
-          <p className="text-xs">• Use zoom controls for precise zoom</p>
+          <div className="flex flex-col space-y-1">
+            <p className="text-xs">• Double-tap to enable dragging</p>
+            <p className="text-xs">• Pinch with two fingers to zoom</p>
+            <p className="text-xs">• Use zoom controls for precise zoom</p>
+          </div>
           <button 
             onClick={() => setShowInstructions(false)}
             className={`
-              mt-2 text-xs px-2 py-1 rounded
+              mt-3 text-xs px-3 py-1.5 rounded-md
+              font-medium transition-colors
               ${theme === 'dark' ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'}
-              transition-colors
             `}
           >
             Got it

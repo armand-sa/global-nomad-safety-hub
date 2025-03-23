@@ -80,3 +80,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Improve scrolling behavior and prevent page jank */
+html, body {
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+main, section {
+  position: relative;
+  z-index: 0;
+}

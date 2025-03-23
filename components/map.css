@@ -1,8 +1,8 @@
 /* Custom Leaflet tooltip styles */
-.leaflet-tooltip {
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
+.leaflet-tooltip:not(.custom-tooltip) {
+  background-color: transparent; /* Let Tooltip component handle it */
+  border: none;
+  box-shadow: none;
   padding: 0 !important;
 }
 
@@ -20,29 +20,39 @@
   z-index: 1000 !important;
   max-width: 80% !important;
   text-align: center !important;
-  background: transparent !important;
+  background-color: unset !important;
+  border: none !important;
+  padding: 0 !important;
+  pointer-events: none !important; /* Ensure clicks pass through to map */
 }
 
 /* Add subtle animation to tooltips */
 .custom-tooltip > div {
   animation: tooltipFloat 2s ease-in-out infinite alternate;
   transform-origin: center bottom;
-  background-color: var(--tooltip-bg, white) !important;
-  color: var(--tooltip-text, black) !important;
+  border-radius: 12px !important;
+  padding: 8px 14px !important;
+  font-size: 14px !important;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
   opacity: 1 !important;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 
-/* Add more specificity for dark mode tooltips */
-.dark .custom-tooltip > div {
-  --tooltip-bg: rgb(31 41 55);  /* bg-gray-800 */
-  --tooltip-text: rgb(243 244 246);  /* text-gray-100 */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
-}
-
+/* Light mode styling */
 .custom-tooltip > div {
-  --tooltip-bg: white;
-  --tooltip-text: rgb(31 41 55);  /* text-gray-800 */
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  color: #222 !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Dark mode tooltips */
+.dark .custom-tooltip > div {
+  background-color: rgba(30, 30, 30, 0.9) !important;
+  color: #f5f5f5 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
 }
 
 @keyframes tooltipFloat {
@@ -54,10 +64,10 @@
   }
 }
 
-/* Ensure dropdown is above map controls */
+/* Ensure map UI layers stack correctly with navbar (z-999) */
 .leaflet-top, 
 .leaflet-bottom {
-  z-index: 900 !important;
+  z-index: 950 !important;
 }
 
 /* Mobile-friendly select padding for touch */
@@ -88,6 +98,8 @@
   }
   
   .dropdown-up select#zoom-select {
+    position: relative !important;
+    z-index: 960 !important;
     appearance: none;
     background-position: calc(100% - 5px) 50%;
     background-size: 12px;
@@ -101,47 +113,44 @@
   }
 }
 
-/* Style attribution to be less intrusive but still visible */
+/* Style attribution to be visible and modern */
 .leaflet-control-attribution {
-  background-color: rgba(255, 255, 255, 0.7) !important;
-  border-radius: 4px !important;
-  padding: 1px 4px !important;
-  font-size: 7px !important;
-  opacity: 1 !important;
-  transition: opacity 0.2s ease-in-out !important;
-  right: 3px !important;
-  bottom: 45px !important;
-  line-height: 1 !important;
-  max-width: 80% !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  white-space: nowrap !important;
-  z-index: 999 !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  color: #333 !important;
+  font-size: 10px !important;
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+  z-index: 990 !important;
+  bottom: 10px !important;
+  right: 10px !important;
+  font-weight: 500 !important;
   pointer-events: auto !important;
   display: block !important;
   visibility: visible !important;
-  box-shadow: 0 0 3px rgba(0,0,0,0.1) !important;
 }
 
 .leaflet-control-attribution:hover {
   opacity: 1 !important;
 }
 
+/* Attribution links */
 .map-attribution {
-  color: rgba(0, 0, 0, 0.7) !important;
   text-decoration: none !important;
-  margin-right: 3px !important;
-  font-weight: normal !important;
-  display: inline !important;
+  margin-right: 6px;
+  font-weight: 500;
+  color: inherit !important;
 }
 
-/* Set appropriate attribution colors for dark mode */
-.dark .map-attribution {
-  color: rgba(255, 255, 255, 0.8) !important;
-}
-
+/* Dark mode version */
 .dark .leaflet-control-attribution {
   background-color: rgba(0, 0, 0, 0.7) !important;
+  color: rgba(255,255,255,0.85) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.dark .map-attribution {
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
 /* Properly position zoom controls */
@@ -209,4 +218,15 @@
     right: 5px !important;
     max-width: 150px !important;
   }
+}
+
+/* Zoom dropdown select element fix */
+select#zoom-select {
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  background-color: inherit !important;
+  color: inherit !important;
+  z-index: 960 !important;
 } 
