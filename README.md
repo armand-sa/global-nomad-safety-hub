@@ -338,5 +338,5 @@ SECRETS_SCAN_OMIT_PATHS=.next/**/*
    - Help others
 
 ### License
-This project is protected under [Your chosen license type].
-All rights reserved © 2024 [Your Company Name]
+This project is protected under [Your chosen license type]. ✅
+All rights reserved © 2024 [Your Company Name] ✅
