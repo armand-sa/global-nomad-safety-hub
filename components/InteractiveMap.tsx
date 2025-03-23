@@ -103,23 +103,46 @@ const defaultZoom = 13; // Default zoom to show full safety circle
 
 export default function InteractiveMap() {
   const { theme } = useTheme();
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Only render component after mount
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Fix for Leaflet icons in Next.js
   useEffect(() => {
-    // @ts-ignore
-    delete L.Icon.Default.prototype._getIconUrl;
-    // @ts-ignore
-    L.Icon.Default.mergeOptions({
-      iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-      iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-    });
-  }, []);
+    if (isMounted) {
+      // Only run on client side
+      import('leaflet').then((L) => {
+        // @ts-ignore - Leaflet's Icon has _getIconUrl but it's not in the type definitions
+        delete L.Icon.Default.prototype._getIconUrl;
+        
+        L.Icon.Default.mergeOptions({
+          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+        });
+      });
+    }
+  }, [isMounted]);
 
   // Get the appropriate tile layer URL based on theme
   const tileUrl = theme === 'dark'
     ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
     : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+  // Show loading state while component isn't mounted yet
+  if (!isMounted) {
+    return (
+      <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg bg-muted/50 flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-16 w-16 rounded-full bg-primary/30 mb-4"></div>
+          <div className="h-4 w-32 bg-primary/30 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg relative">

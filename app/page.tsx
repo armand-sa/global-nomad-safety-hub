@@ -5,12 +5,15 @@ import { Globe, Shield, MapPin, Bell, PenTool, CreditCard } from "lucide-react";
 import UserLocation from "@/components/location/UserLocation";
 import dynamic from 'next/dynamic';
 
-// Dynamic import for the map component with no SSR
+// Dynamic import for the map component with no SSR and better fallback
 const InteractiveMap = dynamic(() => import('@/components/InteractiveMap'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[400px] rounded-xl overflow-hidden shadow-lg bg-muted/50 flex items-center justify-center">
-      <MapPin className="h-16 w-16 text-primary/70 animate-pulse" />
+      <div className="animate-pulse flex flex-col items-center">
+        <MapPin className="h-16 w-16 text-primary/50 mb-4" />
+        <div className="h-4 w-32 bg-primary/30 rounded"></div>
+      </div>
     </div>
   )
 });
