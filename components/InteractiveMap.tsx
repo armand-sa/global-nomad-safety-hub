@@ -99,27 +99,119 @@ const languages = [
 
 // Translations for the tooltip text
 const translations = {
-  en: { city: "Chiang Mai", safety: "Very Safe" },
-  fr: { city: "Chiang Mai", safety: "Très Sûr" },
-  es: { city: "Chiang Mai", safety: "Muy Seguro" },
-  de: { city: "Chiang Mai", safety: "Sehr Sicher" },
-  it: { city: "Chiang Mai", safety: "Molto Sicuro" },
-  nl: { city: "Chiang Mai", safety: "Zeer Veilig" },
-  pt: { city: "Chiang Mai", safety: "Muito Seguro" },
-  pl: { city: "Chiang Mai", safety: "Bardzo Bezpieczne" },
-  sv: { city: "Chiang Mai", safety: "Mycket Säkert" },
-  no: { city: "Chiang Mai", safety: "Veldig Trygt" },
-  da: { city: "Chiang Mai", safety: "Meget Sikkert" },
-  fi: { city: "Chiang Mai", safety: "Erittäin Turvallinen" },
-  cs: { city: "Chiang Mai", safety: "Velmi Bezpečné" },
-  hu: { city: "Chiang Mai", safety: "Nagyon Biztonságos" },
+  en: { 
+    city: "Chiang Mai", 
+    safety: "Very Safe",
+    warning: "Exercise Caution",
+    danger: "Not Recommended" 
+  },
+  fr: { 
+    city: "Chiang Mai", 
+    safety: "Très Sûr",
+    warning: "Prudence Recommandée",
+    danger: "Non Recommandé" 
+  },
+  es: { 
+    city: "Chiang Mai", 
+    safety: "Muy Seguro",
+    warning: "Precaución Necesaria",
+    danger: "No Recomendado" 
+  },
+  de: { 
+    city: "Chiang Mai", 
+    safety: "Sehr Sicher",
+    warning: "Vorsicht Geboten",
+    danger: "Nicht Empfohlen" 
+  },
+  it: { 
+    city: "Chiang Mai", 
+    safety: "Molto Sicuro",
+    warning: "Esercitare Cautela",
+    danger: "Non Consigliato" 
+  },
+  nl: { 
+    city: "Chiang Mai", 
+    safety: "Zeer Veilig",
+    warning: "Voorzichtigheid Geboden",
+    danger: "Niet Aanbevolen" 
+  },
+  pt: { 
+    city: "Chiang Mai", 
+    safety: "Muito Seguro",
+    warning: "Tenha Cuidado",
+    danger: "Não Recomendado" 
+  },
+  pl: { 
+    city: "Chiang Mai", 
+    safety: "Bardzo Bezpieczne",
+    warning: "Zachowaj Ostrożność",
+    danger: "Niezalecane" 
+  },
+  sv: { 
+    city: "Chiang Mai", 
+    safety: "Mycket Säkert",
+    warning: "Var Försiktig",
+    danger: "Rekommenderas Ej" 
+  },
+  no: { 
+    city: "Chiang Mai", 
+    safety: "Veldig Trygt",
+    warning: "Utvis Forsiktighet",
+    danger: "Ikke Anbefalt" 
+  },
+  da: { 
+    city: "Chiang Mai", 
+    safety: "Meget Sikkert",
+    warning: "Udvis Forsigtighed",
+    danger: "Ikke Anbefalet" 
+  },
+  fi: { 
+    city: "Chiang Mai", 
+    safety: "Erittäin Turvallinen",
+    warning: "Ole Varovainen",
+    danger: "Ei Suositella" 
+  },
+  cs: { 
+    city: "Chiang Mai", 
+    safety: "Velmi Bezpečné",
+    warning: "Buďte Opatrní",
+    danger: "Nedoporučuje Se" 
+  },
+  hu: { 
+    city: "Chiang Mai", 
+    safety: "Nagyon Biztonságos",
+    warning: "Óvatosság Ajánlott",
+    danger: "Nem Ajánlott" 
+  },
 };
+
+// Safety zones data
+const safetyZones = [
+  { 
+    center: [18.7883, 98.9853] as [number, number], 
+    radius: 5000, 
+    color: '#10b981', // green
+    safetyLevel: 'safety'
+  },
+  { 
+    center: [18.8083, 99.0153] as [number, number], 
+    radius: 3000, 
+    color: '#f59e0b', // amber/orange 
+    safetyLevel: 'warning'
+  },
+  { 
+    center: [18.7583, 99.0053] as [number, number], 
+    radius: 2500, 
+    color: '#ef4444', // red
+    safetyLevel: 'danger'
+  }
+];
 
 // Zoom level options
 const zoomLevels = [
   { name: "10 - Far", value: 10 },
   { name: "12 - Medium", value: 12 },
-  { name: "13 - Circle Fit", value: 13 },
+  { name: "13 - Show All Zones", value: 13 },
   { name: "14 - Close", value: 14 },
   { name: "16 - Street", value: 16 },
 ];
@@ -210,16 +302,28 @@ const InteractiveMap = () => {
     setSelectedZoom(zoom);
     if (mapRef.current) {
       if (zoom.value === 13) {
-        // Special case for "Circle Fit"
-        fitMapToCircle(mapRef.current, center, radius);
+        // Special case for "Circle Fit" - fit to show all safety zones
+        const bounds = safetyZones.map(zone => {
+          const radiusInDegrees = zone.radius / 111000;
+          return [
+            [zone.center[0] - radiusInDegrees, zone.center[1] - radiusInDegrees],
+            [zone.center[0] + radiusInDegrees, zone.center[1] + radiusInDegrees]
+          ];
+        }).flat() as [number, number][];
+        
+        mapRef.current.fitBounds(bounds as any, {
+          animate: true,
+          duration: 1.0,
+          padding: [30, 30]
+        });
       } else if (zoom.value === 12) {
-        // Medium zoom needs more specific handling
-        mapRef.current.setView([center[0], center[1]], zoom.value, {
+        // Medium zoom - show main area with slight zoom out
+        mapRef.current.setView(safetyZones[0].center, zoom.value, {
           animate: true,
           duration: 1.0
         });
       } else {
-        mapRef.current.setView([center[0], center[1]], zoom.value, {
+        mapRef.current.setView(safetyZones[0].center, zoom.value, {
           animate: true,
           duration: 0.8
         });
@@ -244,15 +348,28 @@ const InteractiveMap = () => {
     
     // Initial fitting of map to properly show the circle
     if (selectedZoom.value === 13) {
-      fitMapToCircle(map, center, radius);
+      // Special case for "Circle Fit" - fit to show all safety zones
+      const bounds = safetyZones.map(zone => {
+        const radiusInDegrees = zone.radius / 111000;
+        return [
+          [zone.center[0] - radiusInDegrees, zone.center[1] - radiusInDegrees],
+          [zone.center[0] + radiusInDegrees, zone.center[1] + radiusInDegrees]
+        ];
+      }).flat() as [number, number][];
+      
+      map.fitBounds(bounds as any, {
+        animate: true,
+        duration: 1.0,
+        padding: [30, 30]
+      });
     } else if (selectedZoom.value === 12) {
-      // Medium zoom needs special handling
-      map.setView([center[0], center[1]], selectedZoom.value, {
+      // Medium zoom - show main area with slight zoom out
+      map.setView(safetyZones[0].center, selectedZoom.value, {
         animate: true,
         duration: 1.0
       });
     } else {
-      map.setView([center[0], center[1]], selectedZoom.value, {
+      map.setView(safetyZones[0].center, selectedZoom.value, {
         animate: true,
         duration: 0.8
       });
@@ -263,20 +380,34 @@ const InteractiveMap = () => {
   useEffect(() => {
     if (mapRef.current && mapIsReady) {
       if (selectedZoom.value === 13) {
-        fitMapToCircle(mapRef.current, center, radius);
+        // Special case for "Circle Fit" - fit to show all safety zones
+        const bounds = safetyZones.map(zone => {
+          const radiusInDegrees = zone.radius / 111000;
+          return [
+            [zone.center[0] - radiusInDegrees, zone.center[1] - radiusInDegrees],
+            [zone.center[0] + radiusInDegrees, zone.center[1] + radiusInDegrees]
+          ];
+        }).flat() as [number, number][];
+        
+        mapRef.current.fitBounds(bounds as any, {
+          animate: true,
+          duration: 1.0,
+          padding: [30, 30]
+        });
       } else if (selectedZoom.value === 12) {
-        mapRef.current.setView([center[0], center[1]], selectedZoom.value, {
+        // Medium zoom - show main area with slight zoom out
+        mapRef.current.setView(safetyZones[0].center, selectedZoom.value, {
           animate: true,
           duration: 1.0
         });
       } else {
-        mapRef.current.setView([center[0], center[1]], selectedZoom.value, {
+        mapRef.current.setView(safetyZones[0].center, selectedZoom.value, {
           animate: true,
           duration: 0.8
         });
       }
     }
-  }, [selectedZoom.value, mapIsReady]);
+  }, [selectedZoom.value, mapIsReady, safetyZones]);
 
   // Get current translation based on selected language
   const currentTranslation = translations[selectedLanguage.code as keyof typeof translations] || translations.en;
@@ -417,7 +548,7 @@ const InteractiveMap = () => {
             <MapContainer 
               key={`${currentTheme}-${windowWidth}-${selectedLanguage.code}-${selectedZoom.value}`} // Re-render map when theme, width, language or zoom changes
               style={{ height: '100%', width: '100%' }}
-              center={center}
+              center={safetyZones[0].center}
               zoom={selectedZoom.value}
               dragging={isDraggable}
               doubleClickZoom={false}
@@ -430,29 +561,35 @@ const InteractiveMap = () => {
                 url={mapTileUrl}
               />
               
-              <Circle 
-                center={center}
-                pathOptions={{ 
-                  color: '#10b981', 
-                  fillColor: '#10b981', 
-                  fillOpacity: 0.2,
-                  weight: 2,
-                }}
-                radius={radius}
-              >
-                <Tooltip 
-                  permanent={true}
-                  className={`bg-background/80 backdrop-blur-sm border-0 rounded-xl shadow-lg text-center px-3 py-2 ${currentTheme === 'dark' ? 'text-white' : 'text-gray-800'}`}
+              {/* Render all safety zones */}
+              {safetyZones.map((zone, index) => (
+                <Circle 
+                  key={`safety-zone-${index}`}
+                  center={zone.center}
+                  pathOptions={{ 
+                    color: zone.color, 
+                    fillColor: zone.color, 
+                    fillOpacity: 0.2,
+                    weight: 2,
+                  }}
+                  radius={zone.radius}
                 >
-                  <motion.div
-                    animate={{ y: [0, -5, 0] }}
-                    transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                  <Tooltip 
+                    permanent={true}
+                    className={`bg-background/80 backdrop-blur-sm border-0 rounded-xl shadow-lg text-center px-3 py-2 ${currentTheme === 'dark' ? 'text-white' : 'text-gray-800'}`}
                   >
-                    <p className="font-bold text-sm">{currentTranslation.city}</p>
-                    <p className="text-xs opacity-80">{currentTranslation.safety}</p>
-                  </motion.div>
-                </Tooltip>
-              </Circle>
+                    <motion.div
+                      animate={{ y: [0, -5, 0] }}
+                      transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+                    >
+                      <p className="font-bold text-sm">{currentTranslation.city}</p>
+                      <p className={`text-xs font-bold`} style={{ color: zone.color }}>
+                        {currentTranslation[zone.safetyLevel as keyof typeof currentTranslation]}
+                      </p>
+                    </motion.div>
+                  </Tooltip>
+                </Circle>
+              ))}
               
               {/* Map Events Handler */}
               <MapEvents map={mapRef.current} onZoomChange={handleZoomChange} />
